@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ikon buku terbuka -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFB547"
+        android:pathData="M52,40 C44.5,35.5 36,34.5 29,36 L29,72 C36,70.5 44.5,71.5 52,76 Z" />
+    <path
+        android:fillColor="#FFFFB547"
+        android:pathData="M56,40 C63.5,35.5 72,34.5 79,36 L79,72 C72,70.5 63.5,71.5 56,76 Z" />
+    <path
+        android:strokeColor="#FF152030"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M34,46 C39,45 44,45.8 48,48 M34,54 C39,53 44,53.8 48,56 M34,62 C39,61 44,61.8 48,64 M60,48 C64,45.8 69,45 74,46 M60,56 C64,53.8 69,53 74,54 M60,64 C64,61.8 69,61 74,62" />
+</vector>

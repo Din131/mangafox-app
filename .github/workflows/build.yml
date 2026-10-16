@@ -1,0 +1,51 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.14.3
+
+      - name: Unduh daftar blokir iklan
+        run: |
+          mkdir -p app/src/main/assets
+          curl -fsSL https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts \
+            -o app/src/main/assets/hosts.txt || echo "# kosong" > app/src/main/assets/hosts.txt
+          wc -l app/src/main/assets/hosts.txt
+
+      - name: Build APK
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Siapkan file APK
+        run: cp app/build/outputs/apk/release/app-release.apk MangaFox.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MangaFox
+          path: MangaFox.apk
+
+      - name: Terbitkan ke Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: MangaFox v1.0.${{ github.run_number }}
+          body: Unduh **MangaFox.apk** di bawah, lalu install di HP.
+          files: MangaFox.apk
+          make_latest: true
