@@ -179,6 +179,20 @@ class MainActivity : AppCompatActivity() {
         return if (parts.size >= 2) parts.takeLast(2).joinToString(".") else host.lowercase()
     }
 
+    /**
+     * Halaman chapter per halaman ".../manga/judul/v01/c001/3.html" diubah ke mode gulir
+     * ".../roll_manga/judul/v01/c001/1.html", yang menampilkan semua halaman sekaligus.
+     */
+    private val pagedChapter = Regex("""^/manga/([^/]+)/((?:v[^/]+/)?c[\d.]+)(?:/(?:\d+\.html)?)?$""")
+
+    private fun toScrollMode(url: Uri): String? {
+        val host = url.host?.lowercase() ?: return null
+        if (!host.endsWith("fanfox.net") && !host.endsWith("mangafox.me") && !host.endsWith("mangafox.la")) return null
+        val m = pagedChapter.find(url.path ?: return null) ?: return null
+        val (title, chapter) = m.destructured
+        return "${url.scheme}://$host/roll_manga/$title/$chapter/1.html"
+    }
+
     private fun isAllowed(host: String?): Boolean {
         if (host.isNullOrEmpty()) return false
         val h = host.lowercase()
@@ -322,6 +336,10 @@ class MainActivity : AppCompatActivity() {
             val host = url.host
             if (AdBlocker.isBlocked(host) && !isAllowed(host)) return true
             if (!request.isForMainFrame) return false
+
+            // Buka chapter dalam mode gulir (semua halaman dalam satu layar)
+            toScrollMode(url)?.let { view.loadUrl(it); return true }
+
             if (isAllowed(host) || isAuth(host)) return false
 
             // Saat pertama buka, ikuti redirect domain (misalnya situs pindah domain)
