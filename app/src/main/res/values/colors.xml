@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_bg">#FF152030</color>
+    <color name="splash_bg">#FF8CBA08</color>
     <color name="bg">#FFFFFFFF</color>
-    <color name="accent">#FFF7931E</color>
+    <color name="accent">#FF80B509</color>
     <color name="text">#FF222222</color>
 </resources>
