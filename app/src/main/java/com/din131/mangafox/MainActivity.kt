@@ -282,6 +282,62 @@ class MainActivity : AppCompatActivity() {
               setTimeout(function () { waiting = false; scan(); }, 200);
             }).observe(document.documentElement, { childList: true, subtree: true });
           }
+          // Mode gulir: hilangkan pembatas, nomor halaman, dan jarak antar halaman,
+          // supaya halaman manga menyambung seperti satu gambar panjang.
+          if (/\/roll_manga\//.test(location.pathname) && !window.__mfRoll) {
+            window.__mfRoll = true;
+            var imp = function (el, p, v) { el.style.setProperty(p, v, 'important'); };
+            var COUNTER = /^\s*\d+\s*\/\s*\d+\s*$/;
+            var isPage = function (img) {
+              var s = (img.getAttribute('src') || '') + ' ' + (img.getAttribute('data-src') || '') +
+                      ' ' + (img.getAttribute('data-original') || '');
+              if (/loading/i.test(s)) return true; // gambar yang belum termuat
+              return img.getBoundingClientRect().width >= window.innerWidth * 0.6;
+            };
+            var flatten = function () {
+              var imgs = [].filter.call(document.images, isPage);
+              if (imgs.length < 2) return;
+              // Wadah daftar halaman = leluhur bersama dua gambar pertama
+              var list = imgs[0].parentElement;
+              while (list && !list.contains(imgs[1])) list = list.parentElement;
+              if (!list) return;
+              ['padding', 'margin', 'border'].forEach(function (p) { imp(list, p, '0'); });
+              imp(list, 'width', '100%'); imp(list, 'max-width', '100%');
+              for (var i = 0; i < imgs.length; i++) {
+                var img = imgs[i];
+                if (img.__mfFlat) continue;
+                img.__mfFlat = true;
+                ['margin', 'padding', 'border'].forEach(function (p) { imp(img, p, '0'); });
+                imp(img, 'display', 'block'); imp(img, 'vertical-align', 'top');
+                imp(img, 'max-width', '100%');
+                // Dari gambar naik ke wadah daftar: buang jarak, garis, latar, dan teks nomor halaman
+                for (var el = img.parentElement; el && el !== list; el = el.parentElement) {
+                  ['margin', 'padding', 'border', 'min-height'].forEach(function (p) { imp(el, p, '0'); });
+                  imp(el, 'background', 'transparent'); imp(el, 'box-shadow', 'none');
+                  imp(el, 'font-size', '0'); imp(el, 'line-height', '0');
+                  imp(el, 'width', '100%'); imp(el, 'max-width', '100%');
+                  for (var c = 0; c < el.children.length; c++) {
+                    var ch = el.children[c];
+                    if (ch === img || ch.contains(img) || ch.querySelector('img')) continue;
+                    imp(ch, 'display', 'none'); // nomor halaman, garis, dll.
+                  }
+                }
+              }
+              // Gambar yang sudah termuat dibuat selebar layar
+              for (var j = 0; j < imgs.length; j++) {
+                var s = imgs[j].getAttribute('src') || '';
+                if (!/loading/i.test(s)) { imp(imgs[j], 'width', '100%'); imp(imgs[j], 'height', 'auto'); }
+              }
+              // Nomor halaman yang berdiri sendiri di dalam daftar
+              var all = list.querySelectorAll('*');
+              for (var k = 0; k < all.length; k++) {
+                var n = all[k];
+                if (!n.querySelector('img') && n.tagName !== 'IMG' && COUNTER.test(n.textContent || '')) imp(n, 'display', 'none');
+              }
+            };
+            flatten();
+            setInterval(flatten, 800); // gambar dimuat bertahap saat digulir
+          }
           // Zoom dua jari hanya di halaman baca chapter
           if (!window.__komikZoom) {
             window.__komikZoom = true;
