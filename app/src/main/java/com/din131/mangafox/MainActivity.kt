@@ -294,7 +294,38 @@ class MainActivity : AppCompatActivity() {
           // supaya halaman manga menyambung seperti satu gambar panjang.
           if (/\/roll_manga\//.test(location.pathname) && !window.__mfRoll) {
             window.__mfRoll = true;
+            // Bilah hijau atas (judul) dan bawah (menu) selalu tampil. Situs menyembunyikannya
+            // dengan fadeOut saat digulir; aturan !important di sini mengalahkan gaya inline-nya.
+            var bars = document.createElement('style');
+            bars.textContent =
+              '.fixed-header,.fixed-footer{display:block!important;opacity:1!important;visibility:visible!important}' +
+              '.mangaread-main{padding-top:42px!important;padding-bottom:40px!important}' +
+              '.mangaread-main .adv-728-top{display:none!important}';
+            (document.head || document.documentElement).appendChild(bars);
             var imp = function (el, p, v) { el.style.setProperty(p, v, 'important'); };
+            // Lapis 2: fadeOut dari situs tidak berlaku untuk kedua bilah
+            if (window.jQuery && jQuery.fn && !jQuery.fn.__mfPatched) {
+              var origFadeOut = jQuery.fn.fadeOut;
+              jQuery.fn.fadeOut = function () {
+                var rest = this.not('.fixed-header,.fixed-footer');
+                return rest.length ? origFadeOut.apply(rest, arguments) : this;
+              };
+              jQuery.fn.__mfPatched = true;
+            }
+            // Lapis 3: kalau tetap ada yang menyembunyikan, langsung munculkan lagi
+            var keepBars = function () {
+              var els = document.querySelectorAll('.fixed-header,.fixed-footer');
+              for (var b = 0; b < els.length; b++) {
+                var st = els[b].style;
+                if (st.getPropertyValue('display') !== 'block' || st.getPropertyPriority('display') !== 'important') imp(els[b], 'display', 'block');
+                if (st.getPropertyValue('opacity') !== '1' || st.getPropertyPriority('opacity') !== 'important') imp(els[b], 'opacity', '1');
+              }
+            };
+            keepBars();
+            var barEls = document.querySelectorAll('.fixed-header,.fixed-footer');
+            for (var bi = 0; bi < barEls.length; bi++) {
+              new MutationObserver(keepBars).observe(barEls[bi], { attributes: true, attributeFilter: ['style'] });
+            }
             var COUNTER = /^\s*\d+\s*\/\s*\d+\s*$/;
             var isPage = function (img) {
               var s = (img.getAttribute('src') || '') + ' ' + (img.getAttribute('data-src') || '') +
