@@ -437,9 +437,21 @@ class MainActivity : AppCompatActivity() {
           if (!document.getElementById('__mf_chrome')) {
             var ch = document.createElement('style');
             ch.id = '__mf_chrome';
-            ch.textContent = 'footer{display:none!important}nav.menu{display:none!important}';
+            ch.textContent = 'footer{display:none!important}nav.menu{display:none!important}' +
+              // Slot iklan kosong yang menempel di bawah layar (tinggi 90px) dan menutupi tombol
+              '.mobile-banner{display:none!important}' +
+              // Tombol chapter sebelumnya/berikutnya di akhir chapter: lebih besar, tidak tertutup bilah bawah
+              '.roll-pagebtn{display:flex!important;gap:10px;padding:14px 12px!important;margin:0 0 56px!important}' +
+              '.roll-pagebtn a.button-one{flex:1;display:block!important;float:none!important;width:auto!important;height:46px!important;line-height:46px!important;' +
+                'padding:0!important;margin:0!important;text-align:center;border-radius:10px!important;background:#75b520!important;color:#fff!important;' +
+                'font-size:15px!important;font-weight:600!important}' +
+              '#back-top{bottom:64px!important}';
             (document.head || document.documentElement).appendChild(ch);
           }
+          [].forEach.call(document.querySelectorAll('.roll-pagebtn a.button-one'), function (a) {
+            if (/^\s*Prev/i.test(a.textContent)) a.textContent = '‹ Sebelumnya';
+            else if (/^\s*Next/i.test(a.textContent)) a.textContent = 'Berikutnya ›';
+          });
           if (!document.getElementById('__komik_css')) {
             var s = document.createElement('style');
             s.id = '__komik_css';
