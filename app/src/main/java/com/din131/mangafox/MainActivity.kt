@@ -46,7 +46,8 @@ class MainActivity : AppCompatActivity() {
         /** Halaman Akun (status login, Log Out, info aplikasi) dari assets/account.html. */
         private const val ACCOUNT_URL = "https://m.fanfox.net/__akun__"
 
-        private const val LOGOUT_URL = "https://m.fanfox.net/bookmark#mf-logout"
+        /** Alamat Log Out situs (mengakhiri sesi, lalu dialihkan ke halaman login). */
+        private const val LOGOUT_URL = "https://m.fanfox.net/logout"
 
         /** Domain yang boleh diambil lewat jembatan MFNet. */
         private val NET_HOSTS = setOf("fanfox.net", "m.fanfox.net", "newm.fanfox.net")
@@ -88,7 +89,7 @@ class MainActivity : AppCompatActivity() {
         navSearch.isSelected = isSearch || (!isHistory && path.startsWith("/search"))
         navHome.isSelected = !isHistory && !isSearch && (path == "" || path == "/" || path.startsWith("/index"))
         navHistory.isSelected = isHistory
-        navBookmark.isSelected = !isHistory && !pendingLogout && path.startsWith("/bookmark")
+        navBookmark.isSelected = !isHistory && path.startsWith("/bookmark")
         val show = !onReaderPage && !imeVisible
         val vis = if (show) View.VISIBLE else View.GONE
         if (bottomNav.visibility != vis) {
@@ -154,30 +155,22 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun finishLogout(forceClearCookies: Boolean) {
+    /**
+     * Setelah /logout selesai dimuat: hapus semua cookie aplikasi (cookie login MangaFox ikut
+     * terhapus walaupun situs tidak menghapusnya), lalu kembali ke halaman Akun.
+     */
+    private fun finishLogout() {
         if (!pendingLogout) return
         pendingLogout = false
-        if (forceClearCookies) clearSiteCookies()
-        CookieManager.getInstance().flush()
-        clearHistoryAfterLoad = true
-        openAccount()
-    }
-
-    /** Cadangan kalau tombol Log Out situs tidak bereaksi: hapus cookie MangaFox. */
-    private fun clearSiteCookies() {
         val cm = CookieManager.getInstance()
-        for (url in listOf("https://m.fanfox.net", "https://fanfox.net", "https://newm.fanfox.net")) {
-            val raw = cm.getCookie(url) ?: continue
-            for (part in raw.split(';')) {
-                val name = part.substringBefore('=').trim()
-                if (name.isEmpty()) continue
-                cm.setCookie(url, "$name=; Max-Age=0; Path=/")
-                cm.setCookie(url, "$name=; Max-Age=0; Path=/; Domain=.fanfox.net")
-            }
+        cm.removeAllCookies {
+            cm.flush()
+            clearHistoryAfterLoad = true
+            openAccount()
         }
     }
 
-    /** Dipanggil dari halaman Akun dan skrip Log Out. */
+    /** Dipanggil dari halaman Akun. */
     private inner class AppBridge {
         @JavascriptInterface
         fun version(): String = try {
@@ -195,9 +188,6 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun logout() = runOnUiThread { startLogout() }
-
-        @JavascriptInterface
-        fun logoutFallback() = runOnUiThread { finishLogout(true) }
     }
 
     private val historyPrefs by lazy { getSharedPreferences("history", MODE_PRIVATE) }
@@ -578,24 +568,6 @@ class MainActivity : AppCompatActivity() {
               addHeader(tEl ? tEl.textContent.trim() : 'Detail Manga', true);
             }
           }
-          // Log Out dari tab Akun: aplikasi membuka /bookmark#mf-logout, lalu tombol Log Out
-          // bawaan situs ditekan otomatis (tombolnya disembunyikan dari halaman Bookmark).
-          if (location.hash === '#mf-logout' && !window.__mfLogout) {
-            window.__mfLogout = true;
-            var tries = 0;
-            var doLogout = function () {
-              var lo = document.querySelector('.bottom_logout');
-              if (lo) {
-                if (window.jQuery) jQuery(lo).trigger('click'); else lo.click();
-                setTimeout(function () { window.MFApp && MFApp.logoutFallback(); }, 5000);
-              } else if (++tries < 20 && document.readyState !== 'complete') {
-                setTimeout(doLogout, 250);
-              } else {
-                window.MFApp && MFApp.logoutFallback();
-              }
-            };
-            setTimeout(doLogout, 300);
-          }
           // Daftar manga (beranda, dll.): 3 kolom selebar layar, sampul lebih besar,
           // dan judul lengkap 2 baris (situs memotong judul jadi "The Healer...").
           if (document.querySelector('ul.manga-list') && !window.__mfGrid) {
@@ -887,9 +859,9 @@ class MainActivity : AppCompatActivity() {
                 clearHistoryAfterLoad = false
                 view.clearHistory()
             }
-            // Log Out selesai begitu situs pindah ke halaman lain (atau memuat ulang tanpa #mf-logout)
-            if (pendingLogout && url != null && !url.endsWith("#mf-logout")) {
-                finishLogout(false)
+            // Log Out selesai begitu halaman /logout (dan pengalihannya) selesai dimuat
+            if (pendingLogout && url != null && !url.startsWith(ACCOUNT_URL)) {
+                finishLogout()
                 return
             }
             // Catat riwayat baca (hanya di halaman MangaFox)
