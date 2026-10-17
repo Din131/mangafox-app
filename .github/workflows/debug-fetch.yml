@@ -1,0 +1,41 @@
+name: Ambil contoh halaman (debug sekali pakai)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/debug-fetch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil halaman
+        run: |
+          mkdir out && cd out
+          D="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+          M="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36"
+          get() { curl -sSL -A "$1" -o "$2" -w "$2 %{http_code} %{url_effective}\n" "$3" >> log.txt; }
+          get "$D" adv_search.html   "https://fanfox.net/search"
+          get "$D" dir_action.html   "https://fanfox.net/directory/action/"
+          get "$D" dir_rating.html   "https://fanfox.net/directory/action/?rating"
+          get "$D" dir_az.html       "https://fanfox.net/directory/action/?az"
+          get "$D" dir_comp_rating.html "https://fanfox.net/directory/action/completed/?rating"
+          get "$M" newm_ranking.html "https://newm.fanfox.net/ranking/"
+          get "$M" newm_detail.html  "https://newm.fanfox.net/manga/one_piece/"
+          get "$M" newm_home.html    "https://newm.fanfox.net/"
+          # skrip pencarian di halaman advanced search
+          grep -oE 'src="[^"]+\.js[^"]*"' adv_search.html | sed -E 's/^src="//; s/"$//' | sort -u > js.txt
+          i=0; while read -r u; do case "$u" in //*) u="https:$u";; /*) u="https://fanfox.net$u";; esac; i=$((i+1)); get "$D" "adv_js_$i.js" "$u"; done < js.txt
+          cat log.txt
+      - name: Simpan ke branch sementara
+        run: |
+          cd out
+          git init -q -b debug-fetch
+          git config user.name "Din131"
+          git config user.email "Din131@users.noreply.github.com"
+          git add -A && git commit -q -m "debug"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" debug-fetch
