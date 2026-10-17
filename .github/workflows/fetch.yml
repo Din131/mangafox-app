@@ -9,10 +9,11 @@ jobs:
       - run: |
           UA="Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
           mkdir -p out
-          curl -sSL -A "$UA" https://m.fanfox.net/login -o out/login.html
-          curl -sSL -A "$UA" https://m.fanfox.net/signUp -o out/signup.html
-          for u in $(grep -ho '//m.fanfox.net/mobile/[^"]*\.\(js\|css\)[^"]*' out/*.html | sort -u); do
-            n=$(echo "$u" | sed 's#.*/##; s#?.*##'); curl -sSL -A "$UA" "https:$u" -o "out/$n"; done
-          ls -la out
+          for u in https://m.fanfox.net/roll_manga/ao_ashi/c283/ https://m.fanfox.net/roll_manga/ao_ashi/v25/c281/ https://m.fanfox.net/roll_manga/ao_ashi/v25/c281/1.html; do
+            echo "### $u" >> out/log.txt
+            curl -sS -A "$UA" -D - -o /dev/null -L --max-redirs 5 "$u" | grep -i "^HTTP\|^location" >> out/log.txt
+          done
+          curl -sSL -A "$UA" https://m.fanfox.net/roll_manga/ao_ashi/c283/ -o out/c283.html
+          curl -sSL -A "$UA" https://m.fanfox.net/roll_manga/ao_ashi/v25/c281/ -o out/c281.html
           git config user.name Din131; git config user.email Din131@users.noreply.github.com
           git add out; git commit -m "hasil"; git push
