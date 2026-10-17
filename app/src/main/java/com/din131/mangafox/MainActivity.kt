@@ -424,6 +424,78 @@ class MainActivity : AppCompatActivity() {
               setTimeout(function () { waiting = false; scan(); }, 200);
             }).observe(document.documentElement, { childList: true, subtree: true });
           }
+          // Tampilan seragam dengan halaman Cari & Riwayat: header hijau untuk Beranda, Bookmark,
+          // dan detail manga, plus tombol/tab/teks yang dirapikan.
+          if (!window.__mfUniform) {
+            window.__mfUniform = true;
+            var pth = location.pathname.replace(/\/+$/, '') || '/';
+            var isHome = pth === '/' || /^\/index(\.html?)?$/.test(pth);
+            var isBookmark = /^\/bookmark/.test(pth);
+            var isDetail = /^\/manga\/[^\/]+$/.test(pth) && !!document.querySelector('.manga-detail');
+            var ucss = document.createElement('style');
+            ucss.textContent =
+              '.mf-header{position:sticky;top:0;z-index:1000;display:flex;align-items:center;height:52px;padding:0 14px 0 4px;' +
+                'background:#75b520;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);font-family:system-ui,-apple-system,Roboto,sans-serif}' +
+              '.mf-header h1{flex:1;margin:0 0 0 10px;font-size:18px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+              '.mf-header button{flex:none;background:none;border:0;color:#fff;font-size:20px;line-height:1;padding:10px 6px 10px 10px}' +
+              // Beranda: judul bagian lebih tegas
+              '.title-black{height:auto!important;line-height:1.3!important;padding:14px 12px 6px!important;color:#1d2418!important;font-size:16px!important;font-weight:700!important}' +
+              // Detail manga
+              '.manga-detail-top .title{display:none!important}' +
+              '.manga-detail .manga-detail-top{padding:14px 12px 12px!important}' +
+              '.manga-detail-top .detail-cover{border:0!important;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.18);object-fit:cover}' +
+              '.manga-detail-top .detail-info p{color:#555!important;padding-top:7px!important}' +
+              '.manga-detail-top .detail-info p:first-child a{color:#0077cc!important}' +
+              '.manga-detail-top .detail-info a.button-two{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;' +
+                'height:40px!important;padding:0 14px!important;margin:6px 8px 0 0!important;border-radius:8px!important;font-size:14px!important;' +
+                'font-weight:600!important;background:#75b520!important;color:#fff!important}' +
+              '.manga-detail-top .detail-info a.button-two + a.button-two{background:#eef3e6!important;color:#5a8f16!important}' +
+              '.manga-detail-top .detail-info a.button-two.bookmarked{background:#eee!important;color:#8a9283!important}' +
+              '.manga-detail-top .detail-info a.button-two br{display:none}' +
+              '.manga-detail-top .detail-info a.mf-continue{border-radius:8px!important;margin-top:10px!important;padding:11px 12px!important}' +
+              '.detail-menu{border-color:#e3e7dd!important}' +
+              '.detail-menu li a{color:#6b7464!important;background:#fff!important;border-right:0!important;font-size:14px!important;font-weight:600!important;' +
+                'line-height:44px!important;border-bottom:3px solid transparent!important}' +
+              '.detail-menu li.select a{color:#5a8f16!important;border-bottom-color:#75b520!important}' +
+              '.manga-chapters dl dd.chlist a{line-height:34px!important;color:#333!important;font-size:14px!important}' +
+              '.manga-chapters dl dt span{color:#1d2418!important;font-size:14px!important}' +
+              // Bookmark: tombol Log Out tidak lagi menempel di bawah, tombol hapus lebih kecil
+              '.bottom_logout{position:static!important;margin:18px 12px 12px!important;border-radius:10px!important;background:#fdeaea!important;' +
+                'color:#d64545!important;font-size:15px!important;font-weight:600!important;line-height:46px!important}' +
+              '.post-one .del-button{width:40px!important;height:40px!important;right:12px!important;bottom:12px!important;border-radius:50%!important}' +
+              '.post-one .del-button i{width:40px!important;height:40px!important;padding:0!important;font-size:22px!important;border-radius:50%!important;' +
+                'display:flex!important;align-items:center;justify-content:center;background:#eef3e6!important;color:#5a8f16!important}';
+            (document.head || document.documentElement).appendChild(ucss);
+            // "Start<br>Reading" -> "Start Reading"
+            [].forEach.call(document.querySelectorAll('.manga-detail-top a.button-two br'), function (br) {
+              br.parentNode.replaceChild(document.createTextNode(' '), br);
+            });
+            var addHeader = function (title, withBack) {
+              if (document.getElementById('mf-header') || !document.body) return;
+              var hd = document.createElement('div');
+              hd.id = 'mf-header'; hd.className = 'mf-header';
+              if (withBack) {
+                var bk = document.createElement('button');
+                bk.setAttribute('aria-label', 'Kembali');
+                bk.textContent = '←';
+                bk.onclick = function () { history.length > 1 ? history.back() : (location.href = 'https://m.fanfox.net/'); };
+                hd.appendChild(bk);
+              } else {
+                hd.style.paddingLeft = '14px';
+              }
+              var h1 = document.createElement('h1');
+              h1.textContent = title;
+              if (!withBack) h1.style.marginLeft = '0';
+              hd.appendChild(h1);
+              document.body.insertBefore(hd, document.body.firstChild);
+            };
+            if (isHome) addHeader('Beranda', false);
+            else if (isBookmark) addHeader('Bookmark', false);
+            else if (isDetail) {
+              var tEl = document.querySelector('.manga-detail-top .title');
+              addHeader(tEl ? tEl.textContent.trim() : 'Detail Manga', true);
+            }
+          }
           // Daftar manga (beranda, dll.): 3 kolom selebar layar, sampul lebih besar,
           // dan judul lengkap 2 baris (situs memotong judul jadi "The Healer...").
           if (document.querySelector('ul.manga-list') && !window.__mfGrid) {
