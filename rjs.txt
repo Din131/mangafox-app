@@ -1,4 +1,0 @@
-//static.fanfox.net/v202602274/mangafoxmobile/js/comm.js
-//static.fanfox.net/v202602274/mangafoxmobile/js/jquery-2.1.4.min.js
-//static.fanfox.net/v202602274/mangafoxmobile/js/jquery.cookie.js
-//static.fanfox.net/v202602274/mangafoxmobile/js/main.js

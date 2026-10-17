@@ -1,0 +1,18 @@
+name: debug-fetch
+on: { push: { branches: [debug-fetch] } }
+permissions: { contents: write }
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          UA="Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
+          mkdir -p out
+          curl -sSL -A "$UA" https://m.fanfox.net/login -o out/login.html
+          curl -sSL -A "$UA" https://m.fanfox.net/signUp -o out/signup.html
+          for u in $(grep -ho '//m.fanfox.net/mobile/[^"]*\.\(js\|css\)[^"]*' out/*.html | sort -u); do
+            n=$(echo "$u" | sed 's#.*/##; s#?.*##'); curl -sSL -A "$UA" "https:$u" -o "out/$n"; done
+          ls -la out
+          git config user.name Din131; git config user.email Din131@users.noreply.github.com
+          git add out; git commit -m "hasil"; git push
