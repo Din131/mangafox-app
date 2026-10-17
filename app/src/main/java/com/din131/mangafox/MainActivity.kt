@@ -185,6 +185,13 @@ class MainActivity : AppCompatActivity() {
      */
     private val pagedChapter = Regex("""^/manga/([^/]+)/((?:v[^/]+/)?c[\d.]+)(?:/(?:\d+\.html)?)?$""")
 
+    private fun toMainDomain(url: Uri): String? {
+        val host = url.host?.lowercase() ?: return null
+        if (!host.endsWith("mangafox.me") && !host.endsWith("mangafox.la")) return null
+        val target = url.buildUpon().scheme("https").authority("m.fanfox.net").build()
+        return toScrollMode(target) ?: target.toString()
+    }
+
     private fun toScrollMode(url: Uri): String? {
         val host = url.host?.lowercase() ?: return null
         if (!host.endsWith("fanfox.net") && !host.endsWith("mangafox.me") && !host.endsWith("mangafox.la")) return null
@@ -240,7 +247,8 @@ class MainActivity : AppCompatActivity() {
           if (!window.__komikBanner) {
             window.__komikBanner = true;
             var base = function (h) { return (h || '').toLowerCase().split('.').slice(-2).join('.'); };
-            var SITE = base(location.hostname);
+            // Semua domain milik MangaFox dianggap satu situs
+            var SITES = ['fanfox.net', 'mangafox.me', 'mangafox.la', base(location.hostname)];
             var SAFE = /(^|\.)(discord\.gg|discord\.com|facebook\.com|instagram\.com|x\.com|twitter\.com|t\.me|tiktok\.com|youtube\.com|trakteer\.id|saweria\.co|fansku\.id)$/i;
             var GAMBLE = /slot|gacor|judi|togel|toto|casino|kasino|maxwin|scatter|mahjong|sbobet|pragmatic|jackpot|depo|bonus|win88|\d{2,3}(bet|win)|dewa|hoki|zeus|olympus/i;
             // Daftar ketat untuk gambar di domain situs sendiri (hindari menyembunyikan sampul komik)
@@ -261,7 +269,7 @@ class MainActivity : AppCompatActivity() {
                 var img = a.querySelector('img, picture, video');
                 var host = '';
                 try { host = new URL(a.href, location.href).hostname; } catch (e) {}
-                var external = host && base(host) !== SITE && !SAFE.test(host);
+                var external = host && SITES.indexOf(base(host)) < 0 && !SAFE.test(host);
                 var text = a.href + ' ' + (img ? (img.getAttribute('src') || '') + ' ' + (img.getAttribute('alt') || '') : '');
                 if ((img && external) || (external && GAMBLE.test(text))) hideBox(a);
               }
@@ -392,6 +400,10 @@ class MainActivity : AppCompatActivity() {
             val host = url.host
             if (AdBlocker.isBlocked(host) && !isAllowed(host)) return true
             if (!request.isForMainFrame) return false
+
+            // Domain lama MangaFox (misalnya form pencarian ke m.mangafox.me) -> m.fanfox.net,
+            // supaya tetap di satu domain (login dan cookie sama)
+            toMainDomain(url)?.let { view.loadUrl(it); return true }
 
             // Buka chapter dalam mode gulir (semua halaman dalam satu layar)
             toScrollMode(url)?.let { view.loadUrl(it); return true }
