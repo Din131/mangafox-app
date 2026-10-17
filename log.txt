@@ -1,0 +1,16 @@
+s_default.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=
+s_sort_rating.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=rating
+s_sort_az.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=az
+s_sort_latest.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=latest
+s_sort_news.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=news
+s_sort_1.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=1
+s_sort_2.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=2
+s_sort_3.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=3
+s_sort_4.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=4
+s_sort_5.html 200 https://fanfox.net/search?title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=5
+s_page2.html 200 https://fanfox.net/search?page=2&title=&stype=1&name=&type=0&author_method=cw&author=&artist_method=cw&artist=&rating_method=gt&rating=4&released_method=eq&released=&st=2&genres=1%2C5&nogenres=12&sort=
+newm_ranking.html 200 https://newm.fanfox.net/ranking/
+rank_js_1.js 200 https://static.fanfox.net/v202602274/mangafoxmobile/js/comm.js
+rank_js_2.js 200 https://static.fanfox.net/v202602274/mangafoxmobile/js/jquery-2.1.4.min.js
+rank_js_3.js 200 https://static.fanfox.net/v202602274/mangafoxmobile/js/jquery.cookie.js
+rank_js_4.js 200 https://static.fanfox.net/v202602274/mangafoxmobile/js/main.js
