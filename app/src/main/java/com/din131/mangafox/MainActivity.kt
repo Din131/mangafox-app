@@ -1,6 +1,13 @@
 package com.din131.mangafox
 
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
+import android.content.res.Configuration
+import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.webkit.ScriptHandler
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -188,6 +195,83 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun logout() = runOnUiThread { startLogout() }
+
+        @JavascriptInterface
+        fun getTheme(): String = themePref()
+
+        @JavascriptInterface
+        fun setTheme(mode: String) {
+            if (mode !in setOf("system", "light", "dark")) return
+            settings.edit().putString("theme", mode).apply()
+            runOnUiThread { applyTheme() }
+        }
+    }
+
+    // ---------- Tema (Sistem / Terang / Gelap) ----------
+
+    private val settings by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
+    private val darkCss by lazy { assets.open("dark.css").bufferedReader().use { it.readText() } }
+    private var themeScript: ScriptHandler? = null
+
+    /** "system", "light", atau "dark" */
+    private fun themePref(): String = settings.getString("theme", "system") ?: "system"
+
+    private fun isDark(): Boolean = when (themePref()) {
+        "dark" -> true
+        "light" -> false
+        else -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    }
+
+    /** Skrip yang memasang/melepas gaya gelap di halaman (situs maupun halaman aplikasi). */
+    private fun themeJs(dark: Boolean): String =
+        if (dark) "(function(){var go=function(){var d=document.documentElement;if(!d)return false;d.classList.add('mf-dark');" +
+            "if(!document.getElementById('__mf_dark')){var s=document.createElement('style');s.id='__mf_dark';" +
+            "s.textContent=" + org.json.JSONObject.quote(darkCss) + ";(document.head||d).appendChild(s);}return true;};" +
+            // Saat dokumen baru dibuat, elemen <html> belum ada: tunggu sampai parser membuatnya
+            "if(!go()){var mo=new MutationObserver(function(){if(go())mo.disconnect();});mo.observe(document,{childList:true,subtree:true});}})()"
+        else "(function(){var d=document.documentElement;if(d)d.classList.remove('mf-dark');}())"
+
+    private fun applyTheme() {
+        val dark = isDark()
+        val bg = if (dark) 0xFF121511.toInt() else getColor(R.color.bg)
+        val navBg = if (dark) 0xFF1C211A.toInt() else 0xFFFFFFFF.toInt()
+        val line = if (dark) 0xFF2E3529.toInt() else 0xFFE3E7DD.toInt()
+        findViewById<View>(R.id.root).setBackgroundColor(bg)
+        webView.setBackgroundColor(bg)
+        bottomNav.setBackgroundColor(navBg)
+        bottomNavLine.setBackgroundColor(line)
+        errorView.setBackgroundColor(bg)
+        errorView.setTextColor(if (dark) 0xFFE3E8DD.toInt() else getColor(R.color.text))
+        swipe.setProgressBackgroundColorSchemeColor(navBg)
+        val navColors = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
+            intArrayOf(if (dark) 0xFF9FD45A.toInt() else 0xFF5A8F16.toInt(), if (dark) 0xFF8A9283.toInt() else 0xFF7A8274.toInt())
+        )
+        for (item in listOf(navHome, navSearch, navHistory, navBookmark, navAccount)) {
+            val group = item as LinearLayout
+            for (i in 0 until group.childCount) {
+                when (val c = group.getChildAt(i)) {
+                    is ImageView -> c.imageTintList = navColors
+                    is TextView -> c.setTextColor(navColors)
+                }
+            }
+        }
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
+        // Dipasang sebelum halaman mulai digambar, supaya tidak berkedip putih
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            themeScript?.remove()
+            themeScript = WebViewCompat.addDocumentStartJavaScript(
+                webView, themeJs(dark), setOf("https://fanfox.net", "https://*.fanfox.net"))
+        }
+        webView.evaluateJavascript(themeJs(dark), null)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (themePref() == "system") applyTheme()
     }
 
     private val historyPrefs by lazy { getSharedPreferences("history", MODE_PRIVATE) }
@@ -298,6 +382,7 @@ class MainActivity : AppCompatActivity() {
         navHistory.setOnClickListener { if (webView.url?.startsWith(HISTORY_URL) != true) openHistory() }
         navBookmark.setOnClickListener { webView.loadUrl("https://m.fanfox.net/bookmark") }
         navAccount.setOnClickListener { if (webView.url?.startsWith(ACCOUNT_URL) != true) openAccount() }
+        applyTheme()
 
         // Tarik untuk refresh hanya saat halaman berada di paling atas
         swipe.setColorSchemeColors(getColor(R.color.accent))
@@ -886,6 +971,168 @@ class MainActivity : AppCompatActivity() {
               preTimer = setTimeout(function () { preTimer = null; preloadAhead(); }, 250);
             }, { passive: true });
             setTimeout(preloadAhead, 300);
+
+            var rcss = document.createElement('style');
+            rcss.textContent =
+              // Penanda halaman di tengah bilah bawah
+              '.mf-pageind{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:3px 12px;border-radius:12px;' +
+                'background:rgba(0,0,0,.22);color:#fff;font:600 13px system-ui,-apple-system,Roboto,sans-serif;pointer-events:none;white-space:nowrap}' +
+              // Gambar gagal dimuat
+              '.mf-retry{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:260px;width:100%;' +
+                'background:#262a24;color:#c9cfc3;font:14px system-ui,-apple-system,Roboto,sans-serif;line-height:1.4;text-align:center}' +
+              '.mf-retry button{border:0;border-radius:10px;padding:11px 20px;background:#75b520;color:#fff;font:600 14px system-ui,sans-serif}' +
+              // Kartu lanjut otomatis ke chapter berikutnya
+              '.mf-next{position:fixed;left:12px;right:12px;bottom:52px;z-index:10001;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px;' +
+                'border-radius:12px;background:#1d2418;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.35);font:14px system-ui,-apple-system,Roboto,sans-serif;' +
+                'transform:translateY(calc(100% + 80px));visibility:hidden;transition:transform .25s ease,visibility 0s .25s}' +
+              '.mf-next.show{transform:none;visibility:visible;transition:transform .25s ease}' +
+              '.mf-next .txt{flex:1;line-height:1.35}.mf-next .txt b{display:block;font-size:15px}' +
+              '.mf-next .txt span{color:#b8c2ae;font-size:13px}' +
+              '.mf-next button{flex:none;border:0;border-radius:9px;padding:10px 14px;font:600 14px system-ui,sans-serif}' +
+              '.mf-next .go{background:#75b520;color:#fff}.mf-next .no{background:rgba(255,255,255,.12);color:#fff}' +
+              '.mf-next .bar{position:absolute;left:0;bottom:0;height:3px;border-radius:0 0 0 12px;background:#75b520;width:0}';
+            (document.head || document.documentElement).appendChild(rcss);
+
+            // ---- Penanda halaman (misalnya 12 / 22) ----
+            var footer = document.querySelector('.fixed-footer');
+            var ind = null;
+            if (footer) {
+              ind = document.createElement('div');
+              ind.className = 'mf-pageind';
+              footer.appendChild(ind);
+            }
+            var updateInd = function () {
+              if (!ind) return;
+              var pages = document.querySelectorAll('img.reader-page');
+              if (!pages.length) { ind.style.display = 'none'; return; }
+              var mid = window.innerHeight / 2, cur = 1;
+              for (var i = 0; i < pages.length; i++) {
+                var r = (pages[i].__mfBox || pages[i]).getBoundingClientRect();
+                if (r.top <= mid) cur = i + 1; else break;
+              }
+              ind.style.display = '';
+              ind.textContent = cur + ' / ' + pages.length;
+            };
+
+            // ---- Gambar gagal dimuat ----
+            // Lazy load situs memuat gambar lewat objek tersembunyi; kalau gagal, halaman tetap
+            // berupa animasi loading. Halaman yang tertahan > 8 detik dimuat ulang sendiri
+            // (2 kali), lalu kalau masih gagal muncul tombol "Muat ulang gambar".
+            var isLoadingImg = function (img) { return /loading/i.test(img.getAttribute('src') || ''); };
+            var clearBox = function (img) {
+              if (!img.__mfBox) return;
+              if (img.__mfBox.parentNode) img.__mfBox.parentNode.removeChild(img.__mfBox);
+              img.__mfBox = null;
+              imp(img, 'display', 'block');
+            };
+            var showRetry = function (img, again) {
+              var box = img.__mfBox;
+              if (!box) {
+                box = document.createElement('div');
+                box.className = 'mf-retry';
+                box.innerHTML = '<div></div><button>Muat ulang gambar</button>';
+                img.parentNode.insertBefore(box, img);
+                img.__mfBox = box;
+                img.style.setProperty('display', 'none', 'important');
+                box.lastChild.onclick = function () {
+                  box.firstChild.textContent = 'Memuat…';
+                  box.lastChild.style.display = 'none';
+                  tryLoad(img, 3);
+                };
+              }
+              box.firstChild.textContent = again ? 'Masih gagal. Periksa koneksi lalu coba lagi.' : 'Halaman ini gagal dimuat.';
+              box.lastChild.style.display = '';
+            };
+            var tryLoad = function (img, attempt) {
+              var url = img.getAttribute('data-original');
+              if (!url) return;
+              img.__mfTry = true;
+              var probe = new Image();
+              probe.onload = function () { img.setAttribute('src', url); clearBox(img); };
+              probe.onerror = function () {
+                if (attempt < 2) setTimeout(function () { tryLoad(img, attempt + 1); }, 1500);
+                else showRetry(img, attempt > 2);
+              };
+              probe.src = url;
+            };
+            var watchStuck = function () {
+              var pages = document.querySelectorAll('img.reader-page'), now = Date.now(), vh = window.innerHeight;
+              for (var i = 0; i < pages.length; i++) {
+                var img = pages[i];
+                if (img.__mfTry || img.__mfBox || !isLoadingImg(img)) continue;
+                var r = img.getBoundingClientRect();
+                if (r.top < vh * 2 && r.bottom > -vh) {
+                  if (!img.__mfSeen) img.__mfSeen = now;
+                  else if (now - img.__mfSeen > 8000) tryLoad(img, 1);
+                }
+              }
+            };
+            setInterval(watchStuck, 2000);
+            // Gambar yang src-nya diisi langsung lalu gagal (tanpa lazy load)
+            document.addEventListener('error', function (e) {
+              var img = e.target;
+              if (!img || img.tagName !== 'IMG' || !img.classList.contains('reader-page') || isLoadingImg(img)) return;
+              if (!img.__mfTry) tryLoad(img, 1);
+            }, true);
+
+            // ---- Lanjut otomatis ke chapter berikutnya ----
+            var nextA = null;
+            [].forEach.call(document.querySelectorAll('.roll-pagebtn a'), function (a) {
+              if (/next|berikutnya/i.test(a.textContent)) nextA = a;
+            });
+            var card = null, timer = null, dismissed = false, SECS = 4;
+            var nextLabel = function () {
+              var m = nextA && nextA.getAttribute('href').match(/\/(?:v([^\/]+)\/)?c([\d.]+)\/?/);
+              return m ? 'Chapter ' + String(parseFloat(m[2])) : 'Chapter berikutnya';
+            };
+            var stopCountdown = function () {
+              if (timer) { clearInterval(timer); timer = null; }
+              if (card) card.classList.remove('show');
+            };
+            var startCountdown = function () {
+              if (!nextA || dismissed || timer) return;
+              if (!card) {
+                card = document.createElement('div');
+                card.className = 'mf-next';
+                card.innerHTML = '<div class="txt"><b></b><span></span></div><button class="no">Batal</button><button class="go">Baca</button><div class="bar"></div>';
+                card.querySelector('b').textContent = nextLabel();
+                card.querySelector('.no').onclick = function () { dismissed = true; stopCountdown(); };
+                card.querySelector('.go').onclick = function () { stopCountdown(); location.href = nextA.href; };
+                document.body.appendChild(card);
+              }
+              var left = SECS, bar = card.querySelector('.bar'), sp = card.querySelector('span');
+              sp.textContent = 'Lanjut otomatis dalam ' + left + ' detik';
+              bar.style.transition = 'none'; bar.style.width = '0';
+              void card.offsetWidth;
+              card.classList.add('show');
+              bar.style.transition = 'width ' + SECS + 's linear'; bar.style.width = '100%';
+              timer = setInterval(function () {
+                left--;
+                if (left <= 0) { stopCountdown(); location.href = nextA.href; return; }
+                sp.textContent = 'Lanjut otomatis dalam ' + left + ' detik';
+              }, 1000);
+            };
+            var atEnd = function () {
+              var docH = document.documentElement.scrollHeight;
+              if (docH < window.innerHeight * 2) return false; // halaman belum termuat
+              var pages = document.querySelectorAll('img.reader-page');
+              if (!pages.length) return false;
+              var last = pages[pages.length - 1];
+              if (/loading/i.test(last.getAttribute('src') || '')) return false;
+              return window.innerHeight + window.scrollY >= docH - 40;
+            };
+            var checkEnd = function () {
+              if (atEnd()) startCountdown();
+              else if (timer) stopCountdown();
+            };
+
+            var rTimer = null;
+            window.addEventListener('scroll', function () {
+              if (rTimer) return;
+              rTimer = setTimeout(function () { rTimer = null; updateInd(); checkEnd(); }, 120);
+            }, { passive: true });
+            setTimeout(updateInd, 300);
+            setInterval(updateInd, 1500);
           }
           // Zoom dua jari hanya di halaman baca chapter
           if (!window.__komikZoom) {
@@ -972,6 +1219,7 @@ class MainActivity : AppCompatActivity() {
 
         // Jalankan penyaring sedini mungkin, saat halaman mulai tampil
         override fun onPageCommitVisible(view: WebView, url: String?) {
+            view.evaluateJavascript(themeJs(isDark()), null)
             view.evaluateJavascript(pageJs, null)
         }
 
@@ -979,6 +1227,7 @@ class MainActivity : AppCompatActivity() {
             keepSplash = false
             initialLoad = false
             swipe.isRefreshing = false
+            view.evaluateJavascript(themeJs(isDark()), null)
             view.evaluateJavascript(pageJs, null)
             if (clearHistoryAfterLoad && url?.startsWith(ACCOUNT_URL) == true) {
                 clearHistoryAfterLoad = false

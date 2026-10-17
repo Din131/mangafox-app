@@ -1,0 +1,115 @@
+/* Mode gelap. Aktif kalau <html> punya kelas mf-dark (dipasang aplikasi). */
+
+/* Halaman aplikasi (Cari, Riwayat, Akun) memakai variabel warna */
+html.mf-dark { color-scheme:dark; --bg:#121511; --card:#1c211a; --text:#e3e8dd; --muted:#9aa393; --line:#2e3529; --chip:#26301f; --green-dark:#8cc63f; }
+html.mf-dark .search input, html.mf-dark .chip:not(.on):not(.ex) { background:var(--card)!important; }
+html.mf-dark .btn.ghost, html.mf-dark .avatar, html.mf-dark .chlist a:active { background:#26301f!important; }
+html.mf-dark .btn.danger, html.mf-dark .chip.ex { background:#3a2020!important; border-color:#5a2c2c!important; color:#f08a8a!important; }
+html.mf-dark .new { background:#3d2e12!important; color:#f2b552!important; }
+html.mf-dark .tag.done { background:#26301f!important; }
+html.mf-dark .tag.on { background:#1d2638!important; color:#8fb0f0!important; }
+html.mf-dark button.row:active, html.mf-dark a.row:active { background:#232a20!important; }
+html.mf-dark .seg { background:#26301f!important; }
+html.mf-dark .seg button.on { background:#3a4630!important; color:#fff!important; }
+
+/* Situs MangaFox: latar, teks, garis */
+html.mf-dark, html.mf-dark body, html.mf-dark .site-content, html.mf-dark section.main { background-color:#121511!important; color:#d9dfd3; }
+html.mf-dark a { color:#d9dfd3; }
+html.mf-dark input, html.mf-dark select, html.mf-dark textarea { color:#e3e8dd; }
+html.mf-dark .mangaread-main, html.mf-dark .mangaread-main * { color-scheme:dark; }
+
+/* Tambahan gaya aplikasi di halaman situs */
+html.mf-dark .title-black { color:#e3e8dd!important; }
+html.mf-dark .manga-detail-top .detail-info p { color:#a9b1a2!important; }
+html.mf-dark .manga-detail-top .detail-info p:first-child a { color:#6fb6f0!important; }
+html.mf-dark .manga-detail-top .detail-info a.button-two + a.button-two { background:#26301f!important; color:#9fd45a!important; }
+html.mf-dark .manga-detail-top .detail-info a.button-two.bookmarked { background:#2a2f27!important; color:#8a9283!important; }
+html.mf-dark .detail-menu li a { background:#1c211a!important; color:#9aa393!important; }
+html.mf-dark .detail-menu li.select a { color:#9fd45a!important; }
+html.mf-dark .manga-chapters dl dd.chlist a { color:#d9dfd3!important; }
+html.mf-dark .manga-chapters dl dt span { color:#e3e8dd!important; }
+html.mf-dark .post-one .del-button i { background:#26301f!important; color:#9fd45a!important; }
+html.mf-dark .login-main, html.mf-dark .signup-main { background:#1c211a!important; }
+html.mf-dark .login-main .title, html.mf-dark .signup-list li label { color:#e3e8dd!important; }
+html.mf-dark .login-list .input-box, html.mf-dark .signup-list .input-box { background:#121511!important; border-color:#2e3529!important; }
+html.mf-dark .login-list .input-box input, html.mf-dark .signup-list .input-box input { color:#e3e8dd!important; }
+html.mf-dark .login-list .button-two, html.mf-dark .signup-list .button-two, html.mf-dark .mf-auth-avatar { background:#26301f!important; color:#9fd45a!important; }
+html.mf-dark .login-list .or:before, html.mf-dark .login-list .or:after { background:#2e3529!important; }
+html.mf-dark .signup-list .color-41b2 { color:#9fd45a!important; }
+
+html.mf-dark ul.manga-list .post p.title, html.mf-dark ul.manga-list .post p.title a { color:#e3e8dd!important; }
+html.mf-dark ul.post-list .post-one .cover-info p, html.mf-dark ul.post-list .post-one .cover-info p a { color:#a9b1a2!important; }
+html.mf-dark ul.post-list .post-one .cover-info p.title, html.mf-dark ul.post-list .post-one .cover-info p.title a { color:#e3e8dd!important; }
+html.mf-dark .genres-manga .top-search-content .search-text { background:#1c211a!important; border-color:#2e3529!important; color:#e3e8dd!important; }
+
+/* Hasil dari all.css situs (dibuat otomatis) */
+html.mf-dark input:focus,html.mf-dark textarea:focus{color:#d9dfd3!important}
+html.mf-dark .site-content{background-color:#1c211a!important}
+html.mf-dark .title-black{color:#d9dfd3!important}
+html.mf-dark .flex-control-paging li a.flex-active{background-color:#1c211a!important}
+html.mf-dark .top-search-content{background-color:#1c211a!important}
+html.mf-dark .top-search-content .search-text{color:#d9dfd3!important}
+html.mf-dark .top-search-content .search-icon{color:#d9dfd3!important}
+html.mf-dark .post p{color:#a9b1a2!important}
+html.mf-dark .post .cover{border-color:#2e3529!important}
+html.mf-dark .post-one{border-bottom-color:#2e3529!important}
+html.mf-dark .post-one .cover{border-color:#2e3529!important}
+html.mf-dark .post-one .cover-info p.title a{color:#a9b1a2!important}
+html.mf-dark .post-one .del-button i{background-color:#1c211a!important}
+html.mf-dark .bookmark-main,html.mf-dark .search-main{background-color:#1c211a!important}
+html.mf-dark .post-list{background-color:#1c211a!important}
+html.mf-dark .search-top input{color:#d9dfd3!important}
+html.mf-dark .search-top .search-icon{color:#d9dfd3!important}
+html.mf-dark .genres-manga{background-color:#1c211a!important}
+html.mf-dark .genres-list li{background-color:#1c211a!important}
+html.mf-dark .genres-list li a{color:#a9b1a2!important;border-color:#2e3529!important}
+html.mf-dark .genres-list li a.select,html.mf-dark .genres-list li a:active{background-color:#1c211a!important}
+html.mf-dark .status-list li{background-color:#1c211a!important}
+html.mf-dark .status-list li a{color:#a9b1a2!important;border-color:#2e3529!important}
+html.mf-dark .manga-detail-top .title{color:#a9b1a2!important}
+html.mf-dark .manga-detail-top .detail-cover{border-color:#2e3529!important}
+html.mf-dark .manga-detail-top .detail-info p a.bookmarked{background-color:#1c211a!important}
+html.mf-dark .detail-menu{border-color:#2e3529!important}
+html.mf-dark .detail-menu li{background-color:#1c211a!important}
+html.mf-dark .detail-menu li a{color:#a9b1a2!important;border-right-color:#2e3529!important}
+html.mf-dark .manga-chapters dl dt span{color:#a9b1a2!important}
+html.mf-dark .manga-chapters dl dd.chlist a{color:#a9b1a2!important}
+html.mf-dark .manga-chapters dl dd.chlist a:active{background-color:#1c211a!important}
+html.mf-dark .manga-genres ul li a{color:#a9b1a2!important;border-color:#2e3529!important}
+html.mf-dark .manga-genres ul li a i{border-color:#2e3529!important}
+html.mf-dark .manga-genres ul li a i em{border-color:#2e3529!important}
+html.mf-dark .login-main .title{color:#d9dfd3!important}
+html.mf-dark .login-list li .input-box{border-bottom-color:#2e3529!important}
+html.mf-dark .signup-list{color:#a9b1a2!important}
+html.mf-dark .signup-list li .input-box{border-color:#2e3529!important}
+html.mf-dark .roll-page{color:#d9dfd3!important}
+html.mf-dark .error-main{background-color:#1c211a!important;color:#a9b1a2!important}
+html.mf-dark .error-main p{color:#a9b1a2!important}
+html.mf-dark .also-like{background-color:#1c211a!important}
+html.mf-dark .also-like .alsotitle{background-color:#1c211a!important}
+html.mf-dark .next-chapter{background-color:#1c211a!important}
+html.mf-dark .next-chapter .next-chapter-tip{background-color:#1c211a!important}
+html.mf-dark .next-chapter-tip .title a{color:#a9b1a2!important}
+html.mf-dark .next-chapter-tip .othertip{color:#a9b1a2!important}
+html.mf-dark .user-login{background-color:#1c211a!important}
+html.mf-dark .share-box{background-color:#1c211a!important}
+html.mf-dark .manga-report{background-color:#1c211a!important;color:#a9b1a2!important}
+html.mf-dark .manga-report p.p-textarea{border-color:#2e3529!important;background-color:#1c211a!important}
+html.mf-dark footer{border-top-color:#2e3529!important;background-color:#1c211a!important}
+html.mf-dark footer ul li a{border-right-color:#2e3529!important}
+html.mf-dark footer ul li a:active,html.mf-dark footer ul li a.select{background-color:#1c211a!important}
+html.mf-dark #infscr-loading{background-color:#1c211a!important;color:#d9dfd3!important}
+html.mf-dark .sidetip .setting-icon{border-color:#2e3529!important}
+html.mf-dark .sidetip .sidetip-btn{border-color:#2e3529!important}
+html.mf-dark .comment-tab{border-top-color:#2e3529!important;color:#a9b1a2!important}
+html.mf-dark .comment-tab li{background-color:#1c211a!important;border-bottom-color:#2e3529!important;border-left-color:#2e3529!important}
+html.mf-dark .comment-tab li.select{background-color:#1c211a!important;border-bottom-color:#2e3529!important}
+html.mf-dark .post-comment .post-textarea{border-color:#2e3529!important}
+html.mf-dark .discus-comment li{border-bottom-color:#2e3529!important}
+html.mf-dark .discus-comment li .comment-content{color:#a9b1a2!important}
+html.mf-dark .discus-comment li:active,html.mf-dark .discus-comment li.select{background-color:#1c211a!important}
+html.mf-dark .comment-content .comment-interaction{background-color:#1c211a!important}
+html.mf-dark .comment-interaction a{color:#d9dfd3!important}
+html.mf-dark .comment-interaction a:active,html.mf-dark .comment-interaction a.select{background-color:#1c211a!important}
+html.mf-dark .comment-content .comment-quote{background-color:#1c211a!important;border-color:#2e3529!important}
+html.mf-dark #captcha-area .text{border-color:#2e3529!important}

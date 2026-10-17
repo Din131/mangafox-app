@@ -38,6 +38,11 @@
   .row .label small { display:block; color:var(--muted); font-size:12px; margin-top:1px; }
   .row .value { color:var(--muted); font-size:14px; }
   .row .chev { color:#b3b9ad; font-size:18px; }
+  .seg { display:flex; gap:4px; padding:4px; border-radius:10px; background:#eef3e6; }
+  .seg button { flex:1; border:0; background:none; border-radius:8px; padding:8px 4px; font:600 13px system-ui, sans-serif; color:var(--muted); }
+  .seg button.on { background:#fff; color:var(--green-dark); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .row.theme { flex-wrap:wrap; }
+  .row.theme .seg { flex-basis:100%; }
   .note { color:var(--muted); font-size:12px; text-align:center; margin-top:18px; }
   .hidden { display:none !important; }
 </style>
@@ -60,6 +65,15 @@
     <div class="buttons hidden" id="member">
       <a class="btn ghost" href="https://m.fanfox.net/bookmark">Bookmark saya</a>
       <button class="btn danger" id="logout">Log Out</button>
+    </div>
+  </div>
+
+  <h2>Tampilan</h2>
+  <div class="card">
+    <div class="row theme"><span class="label">Tema<small>Mode gelap untuk semua halaman</small></span>
+      <div class="seg" id="theme">
+        <button data-v="system">Ikuti sistem</button><button data-v="light">Terang</button><button data-v="dark">Gelap</button>
+      </div>
     </div>
   </div>
 
@@ -88,6 +102,15 @@
     var h = JSON.parse((window.MFHistory && window.MFHistory.get()) || '{}') || {};
     $('hcount').textContent = Object.keys(h).length;
   } catch (e) {}
+
+  var seg = $('theme');
+  var markTheme = function (v) {
+    [].forEach.call(seg.children, function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); });
+  };
+  markTheme(app && app.getTheme ? app.getTheme() : 'system');
+  [].forEach.call(seg.children, function (b) {
+    b.onclick = function () { var v = b.getAttribute('data-v'); markTheme(v); app && app.setTheme(v); };
+  });
 
   $('update').onclick = function () { app && app.checkUpdate(); };
   $('cache').onclick = function () { app && app.clearCache(); };

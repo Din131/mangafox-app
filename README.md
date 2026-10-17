@@ -22,6 +22,8 @@ akan ditawarkan otomatis setiap kali aplikasi dibuka.
 - Rating, penulis, dan genre lengkap di halaman detail manga
 - Bilah navigasi bawah: Beranda, Cari, Riwayat, Bookmark, Akun
 - Tab Akun: status login, Masuk/Daftar, Log Out, cek update manual, bersihkan cache
+- Membaca: penanda halaman (12 / 22), lanjut otomatis ke chapter berikutnya, muat ulang gambar yang gagal
+- Mode gelap (Ikuti sistem / Terang / Gelap) di tab Akun
 - Splash screen dan layar tidak mati selama membaca
 - Cek update dari GitHub Releases setiap aplikasi dibuka
 
