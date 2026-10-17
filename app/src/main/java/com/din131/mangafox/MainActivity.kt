@@ -339,6 +339,37 @@ class MainActivity : AppCompatActivity() {
               setTimeout(function () { waiting = false; scan(); }, 200);
             }).observe(document.documentElement, { childList: true, subtree: true });
           }
+          // Daftar manga (beranda, dll.): 3 kolom selebar layar, sampul lebih besar,
+          // dan judul lengkap 2 baris (situs memotong judul jadi "The Healer...").
+          if (document.querySelector('ul.manga-list') && !window.__mfGrid) {
+            window.__mfGrid = true;
+            var grid = document.createElement('style');
+            grid.textContent =
+              'ul.manga-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;' +
+                'gap:14px 10px!important;padding:4px 12px 12px!important;margin:0!important;letter-spacing:0!important;text-align:left!important}' +
+              'ul.manga-list>li{display:block!important;width:auto!important;margin:0!important;padding:0!important;float:none!important}' +
+              'ul.manga-list .post,ul.manga-list .post>a{display:block!important;width:auto!important}' +
+              'ul.manga-list .post .cover{width:100%!important;height:auto!important;aspect-ratio:2/3;border:0!important;' +
+                'border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.18);background:#eee}' +
+              'ul.manga-list .post .cover img{width:100%!important;height:100%!important;object-fit:cover;display:block}' +
+              'ul.manga-list .post .cover p{padding:14px 0 3px!important;line-height:1.2!important;font-size:12px!important;' +
+                'background:linear-gradient(transparent,rgba(0,0,0,.65))!important}' +
+              'ul.manga-list .post p.title{text-align:left!important;color:#333!important;font-size:13px!important;line-height:1.3!important;' +
+                'margin:6px 2px 0!important;height:auto!important;white-space:normal!important;display:-webkit-box!important;' +
+                '-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}';
+            (document.head || document.documentElement).appendChild(grid);
+            var fullTitles = function () {
+              var posts = document.querySelectorAll('ul.manga-list .post');
+              for (var pi = 0; pi < posts.length; pi++) {
+                var tEl = posts[pi].querySelector('p.title');
+                var cImg = posts[pi].querySelector('.cover img');
+                var full = cImg && cImg.getAttribute('title');
+                if (tEl && full && tEl.textContent !== full) tEl.textContent = full;
+              }
+            };
+            fullTitles();
+            setInterval(fullTitles, 1500); // daftar bisa bertambah saat digulir (infinite scroll)
+          }
           // Mode gulir: hilangkan pembatas, nomor halaman, dan jarak antar halaman,
           // supaya halaman manga menyambung seperti satu gambar panjang.
           if (/\/roll_manga\//.test(location.pathname) && !window.__mfRoll) {
