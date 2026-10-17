@@ -590,6 +590,33 @@ class MainActivity : AppCompatActivity() {
             };
             flatten();
             setInterval(flatten, 800); // gambar dimuat bertahap saat digulir
+
+            // Muat lebih awal 8 halaman di depan posisi baca, supaya tidak menunggu saat menggulir.
+            // Memakai pemicu "appear" dari lazy load situs sendiri, jadi tidak dimuat dua kali.
+            var AHEAD = 8;
+            var preloadAhead = function () {
+              var pages = document.querySelectorAll('img.reader-page');
+              if (!pages.length) return;
+              var cur = 0;
+              for (var pi = 0; pi < pages.length; pi++) {
+                if (pages[pi].getBoundingClientRect().bottom > 0) { cur = pi; break; }
+              }
+              for (var pj = cur; pj < Math.min(pages.length, cur + 1 + AHEAD); pj++) {
+                var im = pages[pj];
+                if (im.__mfPre) continue;
+                var orig = im.getAttribute('data-original');
+                if (!orig || (im.getAttribute('src') || '').indexOf(orig) >= 0) { im.__mfPre = true; continue; }
+                im.__mfPre = true;
+                if (window.jQuery) window.jQuery(im).trigger('appear');
+                else im.setAttribute('src', orig);
+              }
+            };
+            var preTimer = null;
+            window.addEventListener('scroll', function () {
+              if (preTimer) return;
+              preTimer = setTimeout(function () { preTimer = null; preloadAhead(); }, 250);
+            }, { passive: true });
+            setTimeout(preloadAhead, 300);
           }
           // Zoom dua jari hanya di halaman baca chapter
           if (!window.__komikZoom) {
