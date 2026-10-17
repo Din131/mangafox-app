@@ -568,6 +568,119 @@ class MainActivity : AppCompatActivity() {
               addHeader(tEl ? tEl.textContent.trim() : 'Detail Manga', true);
             }
           }
+          // Halaman Masuk & Daftar: gaya aplikasi (header hijau, kartu putih, tombol hijau) dan teks Indonesia
+          if (!window.__mfAuth && /^\/(login|signUp)/.test(location.pathname) &&
+              (document.querySelector('.login-main') || document.querySelector('.signup-main'))) {
+            window.__mfAuth = true;
+            var isLogin = !!document.querySelector('.login-main');
+            var acss = document.createElement('style');
+            acss.textContent =
+              'body,.site-content{background:#f2f4ef!important}' +
+              '.site-content>header{display:none!important}' +
+              '.site-content>.main{padding:0!important;margin:0!important}' +
+              '.mf-header{position:sticky;top:0;z-index:1000;display:flex;align-items:center;height:52px;padding:0 14px 0 4px;' +
+                'background:#75b520;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);font-family:system-ui,-apple-system,Roboto,sans-serif}' +
+              '.mf-header h1{flex:1;margin:0 0 0 10px;font-size:18px;font-weight:600;color:#fff}' +
+              '.mf-header button{flex:none;background:none;border:0;color:#fff;font-size:20px;line-height:1;padding:10px 6px 10px 10px}' +
+              '.login-main,.signup-main{margin:12px!important;padding:20px 16px 8px!important;background:#fff;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.06);' +
+                'font-family:system-ui,-apple-system,Roboto,sans-serif}' +
+              '.login-main .member{display:none!important}' +
+              '.mf-auth-avatar{width:64px;height:64px;margin:4px auto 0;border-radius:50%;background:#eef3e6;color:#5a8f16;display:flex;align-items:center;justify-content:center}' +
+              '.mf-auth-avatar svg{width:36px;height:36px;fill:currentColor}' +
+              '.login-main .title{margin:12px 0 4px!important;color:#1d2418!important;font-size:18px!important;font-weight:700!important}' +
+              '.mf-auth-sub{text-align:center;color:#6b7464;font-size:13px;margin:0 0 6px}' +
+              '.signup-main .title{color:#6b7464!important;font-size:14px!important;margin:0 0 4px}' +
+              '.login-list,.signup-list{padding:10px 0 0!important;color:#6b7464!important}' +
+              '.login-list li{padding:0!important;margin:0 0 12px!important;text-align:center}' +
+              '.signup-list li{margin:0 0 14px!important}' +
+              '.signup-list li label{color:#1d2418!important;font-size:14px!important;font-weight:600;margin-bottom:6px!important}' +
+              '.login-list .input-box,.signup-list .input-box{border:1px solid #e3e7dd!important;border-radius:10px!important;background:#fff!important;padding:0 12px!important}' +
+              '.login-list .input-box:focus-within,.signup-list .input-box:focus-within{border-color:#75b520!important;box-shadow:0 0 0 1px #75b520}' +
+              '.left-line,.right-line{display:none!important}' +
+              '.login-list .input-box input,.signup-list .input-box input{height:44px!important;line-height:44px!important;font-size:15px!important;color:#1d2418!important;' +
+                'background:transparent!important;outline:none}' +
+              '.login-list .button-one,.signup-list .button-one{display:block!important;width:100%!important;height:46px!important;line-height:46px!important;border:0!important;' +
+                'border-radius:10px!important;background:#75b520!important;color:#fff!important;font-size:15px!important;font-weight:600!important;-webkit-appearance:none}' +
+              '.login-list .button-two,.signup-list .button-two{display:block!important;float:none!important;width:100%!important;height:46px!important;line-height:46px!important;padding:0!important;' +
+                'border-radius:10px!important;background:#eef3e6!important;color:#5a8f16!important;font-size:15px!important;font-weight:600!important;text-align:center}' +
+              '.signup-list .button-two{margin-top:10px}' +
+              '.login-list .or{width:auto!important;height:auto!important;line-height:1!important;background:none!important;color:#a3aa9c!important;border-radius:0!important;' +
+                'display:flex!important;align-items:center;gap:10px;font-size:12px!important;font-weight:600}' +
+              '.login-list .or:before,.login-list .or:after{content:"";flex:1;height:1px;background:#e3e7dd}' +
+              '.login-fb{height:46px!important;line-height:46px!important;border-radius:10px!important;overflow:hidden;font-size:15px!important;font-weight:600}' +
+              '.login-fb span{background:rgba(0,0,0,.12)!important}' +
+              '.login-list li:last-child{color:#6b7464;font-size:12px;line-height:1.4}' +
+              '.signup-list input[type=checkbox]{width:18px;height:18px;margin:0 8px 0 0;vertical-align:-4px;accent-color:#75b520}' +
+              '.signup-list li label:has(input[type=checkbox]){font-weight:400!important;color:#6b7464!important}' +
+              '.signup-list .color-41b2{color:#5a8f16!important;font-weight:600}' +
+              '.login-main .error,.signup-main .error,.login-main .help-block,.signup-main .help-block,.signup-list li>span,.signup-list li>p{color:#d64545!important;font-size:13px}';
+            (document.head || document.documentElement).appendChild(acss);
+            var setTxt = function (sel, txt, attr) {
+              var el = document.querySelector(sel);
+              if (!el) return;
+              if (attr) el.setAttribute(attr, txt); else el.textContent = txt;
+            };
+            if (document.body && !document.getElementById('mf-header')) {
+              var ah = document.createElement('div');
+              ah.id = 'mf-header'; ah.className = 'mf-header';
+              var ab = document.createElement('button');
+              ab.setAttribute('aria-label', 'Kembali');
+              ab.textContent = '←';
+              ab.onclick = function () { history.length > 1 ? history.back() : (location.href = 'https://m.fanfox.net/'); };
+              ah.appendChild(ab);
+              var at = document.createElement('h1');
+              at.textContent = isLogin ? 'Masuk' : 'Daftar Akun';
+              ah.appendChild(at);
+              document.body.insertBefore(ah, document.body.firstChild);
+            }
+            if (isLogin) {
+              var lm = document.querySelector('.login-main .title');
+              if (lm) {
+                var av = document.createElement('div');
+                av.className = 'mf-auth-avatar';
+                av.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+                lm.parentNode.insertBefore(av, lm);
+                lm.textContent = 'Akun MangaFox';
+                var sub = document.createElement('p');
+                sub.className = 'mf-auth-sub';
+                sub.textContent = 'Masuk untuk menyimpan bookmark';
+                lm.parentNode.insertBefore(sub, lm.nextSibling);
+              }
+              setTxt('.login-list input[name=username]', 'Nama pengguna', 'placeholder');
+              setTxt('.login-list input[name=password]', 'Kata sandi', 'placeholder');
+              setTxt('.login-list input.button-one', 'Masuk', 'value');
+              setTxt('.login-list a.button-two', 'Daftar akun baru');
+              setTxt('.login-list .or', 'ATAU');
+              var fb = document.querySelector('.login-fb');
+              if (fb && fb.lastChild && fb.lastChild.nodeType === 3) fb.lastChild.textContent = 'Masuk dengan Facebook';
+              var lis = document.querySelectorAll('.login-list li');
+              var last = lis[lis.length - 1];
+              if (last && /Password can only/i.test(last.textContent)) last.textContent = 'Kata sandi hanya bisa diganti di versi PC situs MangaFox.';
+            } else {
+              setTxt('.signup-main .title', 'Lengkapi data di bawah ini');
+              var labels = document.querySelectorAll('.signup-list li > label');
+              var names = ['Nama pengguna', 'Kata sandi', 'Ulangi kata sandi', 'Email'];
+              for (var li = 0; li < labels.length && li < names.length; li++) {
+                if (!labels[li].querySelector('input')) labels[li].textContent = names[li];
+              }
+              setTxt('.signup-list input[name=username]', 'Nama pengguna', 'placeholder');
+              setTxt('.signup-list input[name=email]', 'nama@email.com', 'placeholder');
+              var acc = document.querySelector('.signup-list #accept');
+              if (acc) {
+                var lab = acc.parentNode, pol = lab.querySelector('a');
+                while (lab.lastChild && lab.lastChild !== acc) lab.removeChild(lab.lastChild);
+                lab.appendChild(document.createTextNode('Saya setuju dengan '));
+                if (pol) { pol.textContent = 'Kebijakan Privasi'; lab.appendChild(pol); }
+                lab.appendChild(document.createTextNode('.'));
+              }
+              setTxt('.signup-list input.button-one', 'Daftar', 'value');
+              var cancel = document.querySelector('.signup-list a.button-two');
+              if (cancel) {
+                cancel.textContent = 'Sudah punya akun? Masuk';
+                cancel.setAttribute('href', '/login');
+              }
+            }
+          }
           // Daftar manga (beranda, dll.): 3 kolom selebar layar, sampul lebih besar,
           // dan judul lengkap 2 baris (situs memotong judul jadi "The Healer...").
           if (document.querySelector('ul.manga-list') && !window.__mfGrid) {
