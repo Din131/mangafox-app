@@ -32,8 +32,12 @@ import java.io.ByteArrayInputStream
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        /** Halaman Riwayat Baca (dari folder assets aplikasi). */
-        private const val HISTORY_URL = "file:///android_asset/history.html"
+        /**
+         * Alamat halaman Riwayat Baca. Isinya dari assets/history.html, tapi dibuka "atas nama"
+         * m.fanfox.net supaya server gambar mau mengirim sampul (ada proteksi anti-hotlink)
+         * dan halaman bisa mengambil sampul dari situs. Alamat ini tidak pernah diminta ke server.
+         */
+        private const val HISTORY_URL = "https://m.fanfox.net/__riwayat-baca__"
     }
 
     private lateinit var webView: WebView
@@ -47,6 +51,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var historyButton: View
     private var historyJs = ""
+
+    private fun openHistory() {
+        val html = assets.open("history.html").bufferedReader().use { it.readText() }
+        webView.loadDataWithBaseURL(HISTORY_URL, html, "text/html", "utf-8", HISTORY_URL)
+    }
 
     private val historyPrefs by lazy { getSharedPreferences("history", MODE_PRIVATE) }
 
@@ -141,7 +150,7 @@ class MainActivity : AppCompatActivity() {
             if (webView.url?.startsWith(HISTORY_URL) == true) {
                 if (webView.canGoBack()) webView.goBack() else webView.loadUrl(getString(R.string.start_url))
             } else {
-                webView.loadUrl(HISTORY_URL)
+                openHistory()
             }
         }
 
@@ -149,7 +158,14 @@ class MainActivity : AppCompatActivity() {
         swipe.setColorSchemeColors(getColor(R.color.accent))
         swipe.setProgressBackgroundColorSchemeColor(getColor(R.color.bg))
         swipe.setOnChildScrollUpCallback { _, _ -> webView.scrollY > 0 }
-        swipe.setOnRefreshListener { webView.reload() }
+        swipe.setOnRefreshListener {
+            if (webView.url?.startsWith(HISTORY_URL) == true) {
+                swipe.isRefreshing = false
+                openHistory()
+            } else {
+                webView.reload()
+            }
+        }
 
         webView.postDelayed({ keepSplash = false }, 4000)
 

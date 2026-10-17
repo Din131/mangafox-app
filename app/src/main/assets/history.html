@@ -98,7 +98,10 @@
         var img = el('img');
         img.loading = 'lazy';
         img.src = m.c;
-        img.onerror = function () { cover.textContent = title.charAt(0).toUpperCase(); };
+        img.onerror = function () {
+          cover.textContent = title.charAt(0).toUpperCase();
+          refreshCover(slug, true); // link sampul kedaluwarsa: ambil yang baru
+        };
         cover.appendChild(img);
       } else {
         cover.textContent = title.charAt(0).toUpperCase();
@@ -144,6 +147,58 @@
     }
   }
 
+  // ---------- Sampul otomatis ----------
+  // Halaman ini dibuka atas nama m.fanfox.net, jadi bisa mengambil halaman detail manga
+  // langsung dari situs untuk mendapatkan link sampul (yang punya masa berlaku).
+  var COVER_TTL = 20 * 3600 * 1000;
+  var tried = {}, queue = [], running = 0;
+  function absUrl(u) {
+    if (!u) return '';
+    u = u.trim();
+    if (u.indexOf('//') === 0) return 'https:' + u;
+    if (u.charAt(0) === '/') return 'https://m.fanfox.net' + u;
+    return u;
+  }
+  function refreshCover(slug, force) {
+    if (tried[slug]) return;
+    var m = load()[slug];
+    if (!m) return;
+    if (!force && m.c && m.cAt && Date.now() - m.cAt < COVER_TTL) return;
+    tried[slug] = true;
+    queue.push(slug);
+    pump();
+  }
+  function pump() {
+    while (running < 3 && queue.length) {
+      var slug = queue.shift();
+      running++;
+      fetch('https://m.fanfox.net/manga/' + slug + '/', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then((function (slug) {
+          return function (html) {
+            if (!html) return;
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var img = doc.querySelector('img.detail-cover');
+            var t = doc.querySelector('.manga-detail-top .title');
+            if (!img) return;
+            var h = load();
+            if (!h[slug]) return;
+            h[slug].c = absUrl(img.getAttribute('src'));
+            h[slug].cAt = Date.now();
+            if (t && t.textContent.trim()) h[slug].t = t.textContent.trim();
+            save(h);
+            render();
+          };
+        })(slug))
+        .catch(function () {})
+        .then(function () { running--; pump(); });
+    }
+  }
+  function refreshAll() {
+    var h = load();
+    Object.keys(h).forEach(function (k) { if (k !== '__meta' && h[k] && h[k].last) refreshCover(k, false); });
+  }
+
   document.getElementById('back').onclick = function () { history.length > 1 ? history.back() : (location.href = 'https://m.fanfox.net/'); };
   document.getElementById('clear').onclick = function () {
     if (!confirm('Hapus semua riwayat baca?')) return;
@@ -151,6 +206,7 @@
   };
   qEl.addEventListener('input', render);
   render();
+  refreshAll();
 })();
 </script>
 </body>

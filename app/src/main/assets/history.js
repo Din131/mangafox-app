@@ -60,7 +60,7 @@
     m.ch = m.ch || {};
     var meta = (h.__meta || {})[slug] || {};
     m.t = meta.t || m.t || (document.title || '').trim();
-    if (meta.c) m.c = meta.c;
+    if (meta.c && (!m.cAt || (meta.at || 0) > m.cAt)) { m.c = meta.c; m.cAt = meta.at || Date.now(); }
     var titleEl = document.querySelector('.mangaread-title');
     var label = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : ('Ch ' + ch);
     var prev = m.ch[ch];
@@ -132,7 +132,7 @@
     hist.__meta = hist.__meta || {};
     hist.__meta[s] = { t: t, c: c, at: Date.now() };
     var info = hist[s];
-    if (info) { if (t) info.t = t; if (c) info.c = c; }
+    if (info) { if (t) info.t = t; if (c) { info.c = c; info.cAt = Date.now(); } }
     save(hist);
     if (!info || !info.ch) return; // belum pernah dibaca
 
