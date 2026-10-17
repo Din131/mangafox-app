@@ -20,5 +20,9 @@
     <string name="nav_home">Beranda</string>
     <string name="nav_history">Riwayat</string>
     <string name="nav_bookmark">Bookmark</string>
+    <string name="nav_account">Akun</string>
+    <string name="update_checking">Memeriksa update…</string>
+    <string name="update_none">Sudah versi terbaru</string>
+    <string name="update_error">Gagal memeriksa update. Periksa koneksi internet.</string>
     <string name="press_back_again">Tekan kembali sekali lagi untuk keluar</string>
 </resources>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Akun</title>
+<style>
+  :root { --green:#75b520; --green-dark:#5a8f16; --bg:#f2f4ef; --card:#fff; --text:#1d2418; --muted:#6b7464; --line:#e3e7dd; --red:#d64545; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui, -apple-system, Roboto, sans-serif; }
+  header { position:sticky; top:0; z-index:2; display:flex; align-items:center; height:52px; padding:0 16px;
+           background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+  header h1 { margin:0; font-size:18px; font-weight:600; }
+  main { padding:12px 12px 24px; }
+  .card { background:var(--card); border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.06); margin-bottom:14px; overflow:hidden; }
+  .profile { padding:18px 16px 16px; }
+  .who { display:flex; align-items:center; gap:14px; }
+  .avatar { flex:none; width:56px; height:56px; border-radius:50%; background:#eef3e6; color:var(--green-dark);
+            display:flex; align-items:center; justify-content:center; }
+  .avatar svg { width:32px; height:32px; fill:currentColor; }
+  .who b { display:block; font-size:17px; }
+  .who span { color:var(--muted); font-size:13px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#c5cbbf; margin-right:6px; vertical-align:1px; }
+  .on .dot { background:var(--green); }
+  .buttons { display:flex; gap:10px; margin-top:16px; }
+  .btn { flex:1; display:block; text-align:center; text-decoration:none; border:0; font:600 14px system-ui, sans-serif;
+         padding:12px 10px; border-radius:10px; }
+  .btn.primary { background:var(--green); color:#fff; }
+  .btn.ghost { background:#eef3e6; color:var(--green-dark); }
+  .btn.danger { background:#fdeaea; color:var(--red); }
+  .btn:active { filter:brightness(.94); }
+  h2 { margin:18px 4px 8px; font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .row { display:flex; align-items:center; gap:12px; width:100%; padding:14px 16px; background:none; border:0; border-top:1px solid var(--line);
+         font:inherit; color:var(--text); text-align:left; text-decoration:none; }
+  .row:first-child { border-top:0; }
+  button.row:active, a.row:active { background:#f6f8f3; }
+  .row .label { flex:1; }
+  .row .label small { display:block; color:var(--muted); font-size:12px; margin-top:1px; }
+  .row .value { color:var(--muted); font-size:14px; }
+  .row .chev { color:#b3b9ad; font-size:18px; }
+  .note { color:var(--muted); font-size:12px; text-align:center; margin-top:18px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<header><h1>Akun</h1></header>
+<main>
+  <div class="card profile" id="profile">
+    <div class="who">
+      <div class="avatar"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+      <div>
+        <b id="status">Memeriksa…</b>
+        <span id="sub"><i class="dot"></i>Akun MangaFox</span>
+      </div>
+    </div>
+    <div class="buttons hidden" id="guest">
+      <a class="btn primary" href="https://m.fanfox.net/login">Masuk</a>
+      <a class="btn ghost" href="https://m.fanfox.net/signUp">Daftar</a>
+    </div>
+    <div class="buttons hidden" id="member">
+      <a class="btn ghost" href="https://m.fanfox.net/bookmark">Bookmark saya</a>
+      <button class="btn danger" id="logout">Log Out</button>
+    </div>
+  </div>
+
+  <h2>Aplikasi</h2>
+  <div class="card">
+    <div class="row"><span class="label">Versi</span><span class="value" id="version">–</span></div>
+    <button class="row" id="update"><span class="label">Cek update</span><span class="chev">›</span></button>
+    <button class="row" id="cache"><span class="label">Bersihkan cache<small>Hapus gambar dan halaman yang tersimpan sementara</small></span><span class="chev">›</span></button>
+  </div>
+
+  <h2>Riwayat baca</h2>
+  <div class="card">
+    <div class="row"><span class="label">Manga di riwayat</span><span class="value" id="hcount">0</span></div>
+  </div>
+
+  <p class="note">Ganti kata sandi hanya bisa di versi PC situs MangaFox.</p>
+</main>
+
+<script>
+(function () {
+  var app = window.MFApp;
+  var $ = function (id) { return document.getElementById(id); };
+
+  try { $('version').textContent = app ? app.version() : '–'; } catch (e) {}
+  try {
+    var h = JSON.parse((window.MFHistory && window.MFHistory.get()) || '{}') || {};
+    $('hcount').textContent = Object.keys(h).length;
+  } catch (e) {}
+
+  $('update').onclick = function () { app && app.checkUpdate(); };
+  $('cache').onclick = function () { app && app.clearCache(); };
+  $('logout').onclick = function () { app && app.logout(); };
+
+  function show(state) {
+    var prof = $('profile');
+    prof.classList.toggle('on', state === 'in');
+    $('guest').classList.toggle('hidden', state !== 'out');
+    $('member').classList.toggle('hidden', state !== 'in');
+    if (state === 'in') {
+      $('status').textContent = 'Sudah masuk';
+      $('sub').innerHTML = '<i class="dot"></i>Bookmark tersimpan di akunmu';
+    } else if (state === 'out') {
+      $('status').textContent = 'Belum masuk';
+      $('sub').innerHTML = '<i class="dot"></i>Masuk untuk menyimpan bookmark';
+    } else {
+      $('status').textContent = 'Status tidak diketahui';
+      $('sub').innerHTML = '<i class="dot"></i>Periksa koneksi, lalu tarik untuk muat ulang';
+      $('guest').classList.remove('hidden');
+    }
+  }
+
+  // Status login: halaman /bookmark hanya bisa dibuka kalau sudah masuk
+  // (kalau belum, situs mengalihkan ke halaman login).
+  var cbs = {};
+  window.__mfNet = function (id, ok, text) { var cb = cbs[id]; delete cbs[id]; if (cb) cb(ok ? text : null); };
+  if (window.MFNet) {
+    cbs.acc = function (html) {
+      if (html == null) return show('unknown');
+      if (/bottom_logout/.test(html)) return show('in');
+      if (/type=["']?password|<title>\s*Log\s*In/i.test(html)) return show('out');
+      show('unknown');
+    };
+    window.MFNet.fetch('https://m.fanfox.net/bookmark', 'acc');
+  } else {
+    show('unknown');
+  }
+})();
+</script>
+</body>
+</html>

@@ -23,7 +23,7 @@
                 android:layout_height="match_parent" />
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <!-- Bilah navigasi bawah: Beranda, Cari, Riwayat, Bookmark -->
+        <!-- Bilah navigasi bawah: Beranda, Cari, Riwayat, Bookmark, Akun -->
         <View
             android:id="@+id/bottomNavLine"
             android:layout_width="match_parent"
@@ -149,6 +149,35 @@
                 android:layout_marginTop="2dp"
                 android:duplicateParentState="true"
                 android:text="@string/nav_bookmark"
+                android:textColor="@color/nav_item"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navAccount"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:duplicateParentState="true"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_nav_account"
+                android:tint="@color/nav_item" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:duplicateParentState="true"
+                android:text="@string/nav_account"
                 android:textColor="@color/nav_item"
                 android:textSize="12sp" />
         </LinearLayout>

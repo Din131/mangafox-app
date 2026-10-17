@@ -21,6 +21,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
@@ -41,6 +42,11 @@ class MainActivity : AppCompatActivity() {
 
         /** Halaman Cari (Jelajah + Ranking) dari assets/search.html, dengan cara yang sama. */
         private const val SEARCH_URL = "https://m.fanfox.net/__cari__"
+
+        /** Halaman Akun (status login, Log Out, info aplikasi) dari assets/account.html. */
+        private const val ACCOUNT_URL = "https://m.fanfox.net/__akun__"
+
+        private const val LOGOUT_URL = "https://m.fanfox.net/bookmark#mf-logout"
 
         /** Domain yang boleh diambil lewat jembatan MFNet. */
         private val NET_HOSTS = setOf("fanfox.net", "m.fanfox.net", "newm.fanfox.net")
@@ -65,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navHome: View
     private lateinit var navHistory: View
     private lateinit var navBookmark: View
+    private lateinit var navAccount: View
     private var imeVisible = false
     private var onReaderPage = false
     private var historyJs = ""
@@ -75,11 +82,13 @@ class MainActivity : AppCompatActivity() {
         val path = Uri.parse(u).path ?: ""
         val isHistory = u.startsWith(HISTORY_URL)
         val isSearch = u.startsWith(SEARCH_URL)
-        onReaderPage = !isHistory && !isSearch && (path.startsWith("/roll_manga/") || pagedChapter.containsMatchIn(path))
+        val isAccount = u.startsWith(ACCOUNT_URL)
+        navAccount.isSelected = isAccount || (!isHistory && !isSearch && (path.startsWith("/login") || path.startsWith("/signUp")))
+        onReaderPage = !isHistory && !isSearch && !isAccount && (path.startsWith("/roll_manga/") || pagedChapter.containsMatchIn(path))
         navSearch.isSelected = isSearch || (!isHistory && path.startsWith("/search"))
         navHome.isSelected = !isHistory && !isSearch && (path == "" || path == "/" || path.startsWith("/index"))
         navHistory.isSelected = isHistory
-        navBookmark.isSelected = !isHistory && path.startsWith("/bookmark")
+        navBookmark.isSelected = !isHistory && !pendingLogout && path.startsWith("/bookmark")
         val show = !onReaderPage && !imeVisible
         val vis = if (show) View.VISIBLE else View.GONE
         if (bottomNav.visibility != vis) {
@@ -121,6 +130,74 @@ class MainActivity : AppCompatActivity() {
     private fun openHistory() {
         val html = assets.open("history.html").bufferedReader().use { it.readText() }
         webView.loadDataWithBaseURL(HISTORY_URL, html, "text/html", "utf-8", HISTORY_URL)
+    }
+
+    private fun openAccount() {
+        val html = assets.open("account.html").bufferedReader().use { it.readText() }
+        webView.loadDataWithBaseURL(ACCOUNT_URL, html, "text/html", "utf-8", ACCOUNT_URL)
+    }
+
+    /** Sedang menunggu Log Out selesai; setelah itu kembali ke halaman Akun. */
+    @Volatile private var pendingLogout = false
+    /** Setelah Log Out, riwayat "kembali" dikosongkan supaya halaman Log Out tidak terbuka lagi. */
+    private var clearHistoryAfterLoad = false
+
+    private fun startLogout() {
+        AlertDialog.Builder(this)
+            .setTitle("Log Out")
+            .setMessage("Keluar dari akun MangaFox?")
+            .setPositiveButton("Log Out") { _, _ ->
+                pendingLogout = true
+                webView.loadUrl(LOGOUT_URL)
+            }
+            .setNegativeButton("Batal", null)
+            .show()
+    }
+
+    private fun finishLogout(forceClearCookies: Boolean) {
+        if (!pendingLogout) return
+        pendingLogout = false
+        if (forceClearCookies) clearSiteCookies()
+        CookieManager.getInstance().flush()
+        clearHistoryAfterLoad = true
+        openAccount()
+    }
+
+    /** Cadangan kalau tombol Log Out situs tidak bereaksi: hapus cookie MangaFox. */
+    private fun clearSiteCookies() {
+        val cm = CookieManager.getInstance()
+        for (url in listOf("https://m.fanfox.net", "https://fanfox.net", "https://newm.fanfox.net")) {
+            val raw = cm.getCookie(url) ?: continue
+            for (part in raw.split(';')) {
+                val name = part.substringBefore('=').trim()
+                if (name.isEmpty()) continue
+                cm.setCookie(url, "$name=; Max-Age=0; Path=/")
+                cm.setCookie(url, "$name=; Max-Age=0; Path=/; Domain=.fanfox.net")
+            }
+        }
+    }
+
+    /** Dipanggil dari halaman Akun dan skrip Log Out. */
+    private inner class AppBridge {
+        @JavascriptInterface
+        fun version(): String = try {
+            "v" + packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (e: Exception) { "" }
+
+        @JavascriptInterface
+        fun checkUpdate() = runOnUiThread { UpdateChecker(this@MainActivity).checkNow() }
+
+        @JavascriptInterface
+        fun clearCache() = runOnUiThread {
+            webView.clearCache(true)
+            Toast.makeText(this@MainActivity, "Cache dibersihkan", Toast.LENGTH_SHORT).show()
+        }
+
+        @JavascriptInterface
+        fun logout() = runOnUiThread { startLogout() }
+
+        @JavascriptInterface
+        fun logoutFallback() = runOnUiThread { finishLogout(true) }
     }
 
     private val historyPrefs by lazy { getSharedPreferences("history", MODE_PRIVATE) }
@@ -217,6 +294,7 @@ class MainActivity : AppCompatActivity() {
         // Riwayat baca: disimpan di aplikasi, diakses dari history.js dan history.html
         webView.addJavascriptInterface(HistoryBridge(), "MFHistory")
         webView.addJavascriptInterface(NetBridge(), "MFNet")
+        webView.addJavascriptInterface(AppBridge(), "MFApp")
         historyJs = assets.open("history.js").bufferedReader().use { it.readText() }
         bottomNav = findViewById(R.id.bottomNav)
         bottomNavLine = findViewById(R.id.bottomNavLine)
@@ -224,10 +302,12 @@ class MainActivity : AppCompatActivity() {
         navHome = findViewById(R.id.navHome)
         navHistory = findViewById(R.id.navHistory)
         navBookmark = findViewById(R.id.navBookmark)
+        navAccount = findViewById(R.id.navAccount)
         navSearch.setOnClickListener { if (webView.url?.startsWith(SEARCH_URL) != true) openSearch() }
         navHome.setOnClickListener { webView.loadUrl(getString(R.string.start_url)) }
         navHistory.setOnClickListener { if (webView.url?.startsWith(HISTORY_URL) != true) openHistory() }
         navBookmark.setOnClickListener { webView.loadUrl("https://m.fanfox.net/bookmark") }
+        navAccount.setOnClickListener { if (webView.url?.startsWith(ACCOUNT_URL) != true) openAccount() }
 
         // Tarik untuk refresh hanya saat halaman berada di paling atas
         swipe.setColorSchemeColors(getColor(R.color.accent))
@@ -240,6 +320,9 @@ class MainActivity : AppCompatActivity() {
             } else if (webView.url?.startsWith(SEARCH_URL) == true) {
                 swipe.isRefreshing = false
                 openSearch()
+            } else if (webView.url?.startsWith(ACCOUNT_URL) == true) {
+                swipe.isRefreshing = false
+                openAccount()
             } else {
                 webView.reload()
             }
@@ -459,9 +542,8 @@ class MainActivity : AppCompatActivity() {
               '.detail-menu li.select a{color:#5a8f16!important;border-bottom-color:#75b520!important}' +
               '.manga-chapters dl dd.chlist a{line-height:34px!important;color:#333!important;font-size:14px!important}' +
               '.manga-chapters dl dt span{color:#1d2418!important;font-size:14px!important}' +
-              // Bookmark: tombol Log Out tidak lagi menempel di bawah, tombol hapus lebih kecil
-              '.bottom_logout{position:static!important;margin:18px 12px 12px!important;border-radius:10px!important;background:#fdeaea!important;' +
-                'color:#d64545!important;font-size:15px!important;font-weight:600!important;line-height:46px!important}' +
+              // Bookmark: Log Out dipindah ke tab Akun, tombol hapus lebih kecil
+              '.bottom_logout{display:none!important}' +
               '.post-one .del-button{width:40px!important;height:40px!important;right:12px!important;bottom:12px!important;border-radius:50%!important}' +
               '.post-one .del-button i{width:40px!important;height:40px!important;padding:0!important;font-size:22px!important;border-radius:50%!important;' +
                 'display:flex!important;align-items:center;justify-content:center;background:#eef3e6!important;color:#5a8f16!important}';
@@ -495,6 +577,24 @@ class MainActivity : AppCompatActivity() {
               var tEl = document.querySelector('.manga-detail-top .title');
               addHeader(tEl ? tEl.textContent.trim() : 'Detail Manga', true);
             }
+          }
+          // Log Out dari tab Akun: aplikasi membuka /bookmark#mf-logout, lalu tombol Log Out
+          // bawaan situs ditekan otomatis (tombolnya disembunyikan dari halaman Bookmark).
+          if (location.hash === '#mf-logout' && !window.__mfLogout) {
+            window.__mfLogout = true;
+            var tries = 0;
+            var doLogout = function () {
+              var lo = document.querySelector('.bottom_logout');
+              if (lo) {
+                if (window.jQuery) jQuery(lo).trigger('click'); else lo.click();
+                setTimeout(function () { window.MFApp && MFApp.logoutFallback(); }, 5000);
+              } else if (++tries < 20 && document.readyState !== 'complete') {
+                setTimeout(doLogout, 250);
+              } else {
+                window.MFApp && MFApp.logoutFallback();
+              }
+            };
+            setTimeout(doLogout, 300);
           }
           // Daftar manga (beranda, dll.): 3 kolom selebar layar, sampul lebih besar,
           // dan judul lengkap 2 baris (situs memotong judul jadi "The Healer...").
@@ -783,6 +883,15 @@ class MainActivity : AppCompatActivity() {
             initialLoad = false
             swipe.isRefreshing = false
             view.evaluateJavascript(pageJs, null)
+            if (clearHistoryAfterLoad && url?.startsWith(ACCOUNT_URL) == true) {
+                clearHistoryAfterLoad = false
+                view.clearHistory()
+            }
+            // Log Out selesai begitu situs pindah ke halaman lain (atau memuat ulang tanpa #mf-logout)
+            if (pendingLogout && url != null && !url.endsWith("#mf-logout")) {
+                finishLogout(false)
+                return
+            }
             // Catat riwayat baca (hanya di halaman MangaFox)
             if (url != null && isAllowed(Uri.parse(url).host)) view.evaluateJavascript(historyJs, null)
         }

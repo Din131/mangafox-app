@@ -50,7 +50,19 @@ class UpdateChecker(private val activity: Activity) {
     }
 
     /** Dipanggil setiap kali aplikasi dibuka. */
-    fun checkInBackground() {
+    fun checkInBackground() = check(manual = false)
+
+    /** Dari tombol "Cek update" di halaman Akun: selalu memberi kabar hasilnya. */
+    fun checkNow() {
+        Toast.makeText(activity, R.string.update_checking, Toast.LENGTH_SHORT).show()
+        check(manual = true)
+    }
+
+    private fun toast(res: Int) = activity.runOnUiThread {
+        if (!activity.isFinishing) Toast.makeText(activity, res, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun check(manual: Boolean) {
         Thread {
             try { cleanupInstalledApks() } catch (_: Exception) {}
             try {
@@ -59,14 +71,14 @@ class UpdateChecker(private val activity: Activity) {
                 conn.connectTimeout = 10_000
                 conn.readTimeout = 10_000
                 conn.setRequestProperty("Accept", "application/vnd.github+json")
-                if (conn.responseCode != 200) return@Thread
+                if (conn.responseCode != 200) { if (manual) toast(R.string.update_error); return@Thread }
                 val json = JSONObject(conn.inputStream.bufferedReader().use { it.readText() })
                 conn.disconnect()
 
                 val tag = json.optString("tag_name")             // contoh: v1.0.9
                 val latest = tag.substringAfterLast('.').toLongOrNull() ?: return@Thread
-                if (latest <= currentVersion) return@Thread
-                if (prefs.getLong("skipped", -1L) == latest) return@Thread
+                if (latest <= currentVersion) { if (manual) toast(R.string.update_none); return@Thread }
+                if (!manual && prefs.getLong("skipped", -1L) == latest) return@Thread
 
                 val assets = json.optJSONArray("assets") ?: return@Thread
                 var apkUrl: String? = null
@@ -78,7 +90,8 @@ class UpdateChecker(private val activity: Activity) {
 
                 activity.runOnUiThread { showDialog(tag, latest, url) }
             } catch (_: Exception) {
-                // Tidak ada internet / GitHub tidak bisa dijangkau: diam saja
+                // Tidak ada internet / GitHub tidak bisa dijangkau: diam saja (kecuali dicek manual)
+                if (manual) toast(R.string.update_error)
             }
         }.start()
     }

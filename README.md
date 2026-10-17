@@ -20,7 +20,8 @@ akan ditawarkan otomatis setiap kali aplikasi dibuka.
 - Tab Cari: filter multi-genre (sertakan/kecualikan), jenis, status, rating minimal, urutan
   (Populer/Rating/Update terbaru/Manga baru/A–Z), plus Ranking harian/mingguan/bulanan/total
 - Rating, penulis, dan genre lengkap di halaman detail manga
-- Bilah navigasi bawah: Cari, Beranda, Riwayat, Bookmark
+- Bilah navigasi bawah: Beranda, Cari, Riwayat, Bookmark, Akun
+- Tab Akun: status login, Masuk/Daftar, Log Out, cek update manual, bersihkan cache
 - Splash screen dan layar tidak mati selama membaca
 - Cek update dari GitHub Releases setiap aplikasi dibuka
 
