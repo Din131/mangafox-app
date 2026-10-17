@@ -398,6 +398,27 @@ class MainActivity : AppCompatActivity() {
             tidyList();
             setInterval(tidyList, 1500); // daftar bertambah saat digulir
           }
+          // Kotak pencarian di halaman Search: gaya sama dengan halaman Riwayat Baca
+          if (document.querySelector('.genres-manga .top-search') && !window.__mfSearchBox) {
+            window.__mfSearchBox = true;
+            var sb = document.createElement('style');
+            sb.textContent =
+              '.genres-manga .top-search{box-sizing:border-box!important;width:100%!important;height:auto!important;padding:12px!important;margin:0!important}' +
+              '.genres-manga .top-search-content{background:none!important;margin:0!important;padding:0!important;' +
+                'border-radius:0!important;line-height:normal!important;position:relative!important}' +
+              '.genres-manga .top-search-content form{position:relative;margin:0}' +
+              '.genres-manga .top-search-content .search-text{box-sizing:border-box!important;width:100%!important;height:46px!important;' +
+                'border:1px solid #e3e7dd!important;background:#fff!important;border-radius:10px!important;' +
+                'padding:10px 70px 10px 12px!important;font:15px/1.4 system-ui,-apple-system,Roboto,sans-serif!important;color:#1d2418!important;' +
+                '-webkit-appearance:none;appearance:none}' +
+              '.genres-manga .top-search-content .search-text::placeholder{color:#8a9283}' +
+              '.genres-manga .top-search-content .search-text:focus{outline:2px solid #75b520!important;border-color:transparent!important}' +
+              '.genres-manga .top-search-content .search-icon{top:6px!important;right:6px!important;width:56px!important;height:34px!important;' +
+                'line-height:34px!important;border-radius:8px!important;background:#75b520!important;color:#fff!important;' +
+                'font:600 14px system-ui,-apple-system,Roboto,sans-serif!important;border:0!important;-webkit-appearance:none;appearance:none}' +
+              '.genres-manga .top-search-content .search-icon:active{background:#5a8f16!important}';
+            (document.head || document.documentElement).appendChild(sb);
+          }
           // Mode gulir: hilangkan pembatas, nomor halaman, dan jarak antar halaman,
           // supaya halaman manga menyambung seperti satu gambar panjang.
           if (/\/roll_manga\//.test(location.pathname) && !window.__mfRoll) {
