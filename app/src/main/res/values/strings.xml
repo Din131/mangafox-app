@@ -16,5 +16,9 @@
     <string name="update_failed">Gagal mengunduh update</string>
     <string name="update_allow_install">Izinkan MangaFox memasang aplikasi, lalu buka lagi untuk update</string>
     <string name="history">Riwayat baca</string>
+    <string name="nav_search">Cari</string>
+    <string name="nav_home">Beranda</string>
+    <string name="nav_history">Riwayat</string>
+    <string name="nav_bookmark">Bookmark</string>
     <string name="press_back_again">Tekan kembali sekali lagi untuk keluar</string>
 </resources>

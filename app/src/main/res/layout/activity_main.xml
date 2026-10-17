@@ -5,17 +5,156 @@
     android:layout_height="match_parent"
     android:background="@color/bg">
 
-    <!-- Tarik ke bawah dari atas halaman untuk refresh -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <WebView
-            android:id="@+id/webView"
+        <!-- Tarik ke bawah dari atas halaman untuk refresh -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <WebView
+                android:id="@+id/webView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <!-- Bilah navigasi bawah: Cari, Beranda, Riwayat, Bookmark -->
+        <View
+            android:id="@+id/bottomNavLine"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#FFE3E7DD" />
+
+        <LinearLayout
+            android:id="@+id/bottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:background="#FFFFFFFF"
+            android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/navSearch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:duplicateParentState="true"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_nav_search"
+                android:tint="@color/nav_item" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:duplicateParentState="true"
+                android:text="@string/nav_search"
+                android:textColor="@color/nav_item"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navHome"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:duplicateParentState="true"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_nav_home"
+                android:tint="@color/nav_item" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:duplicateParentState="true"
+                android:text="@string/nav_home"
+                android:textColor="@color/nav_item"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navHistory"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:duplicateParentState="true"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_history"
+                android:tint="@color/nav_item" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:duplicateParentState="true"
+                android:text="@string/nav_history"
+                android:textColor="@color/nav_item"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navBookmark"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:duplicateParentState="true"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_nav_bookmark"
+                android:tint="@color/nav_item" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:duplicateParentState="true"
+                android:text="@string/nav_bookmark"
+                android:textColor="@color/nav_item"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        </LinearLayout>
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progress"
@@ -27,21 +166,6 @@
         android:max="100"
         android:progressTint="@color/accent"
         android:visibility="gone" />
-
-    <!-- Tombol Riwayat Baca -->
-    <ImageButton
-        android:id="@+id/historyButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="bottom|start"
-        android:layout_marginStart="12dp"
-        android:layout_marginBottom="56dp"
-        android:background="@drawable/fab_bg"
-        android:contentDescription="@string/history"
-        android:elevation="6dp"
-        android:padding="12dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_history" />
 
     <TextView
         android:id="@+id/errorView"

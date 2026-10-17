@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Warna ikon & tulisan bilah navigasi: hijau saat aktif, abu-abu saat tidak -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#FF5A8F16" android:state_selected="true" />
+    <item android:color="#FF7A8274" />
+</selector>

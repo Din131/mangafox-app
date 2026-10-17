@@ -49,8 +49,34 @@ class MainActivity : AppCompatActivity() {
     /** Dibaca dari thread jaringan WebView, jadi disimpan sekali di sini. */
     @Volatile private var userAgent = ""
 
-    private lateinit var historyButton: View
+    // Bilah navigasi bawah
+    private lateinit var bottomNav: View
+    private lateinit var bottomNavLine: View
+    private lateinit var navSearch: View
+    private lateinit var navHome: View
+    private lateinit var navHistory: View
+    private lateinit var navBookmark: View
+    private var imeVisible = false
+    private var onReaderPage = false
     private var historyJs = ""
+
+    /** Tandai tab aktif dan sembunyikan bilah di halaman baca chapter / saat keyboard muncul. */
+    private fun updateBottomNav(url: String? = webView.url) {
+        val u = url ?: ""
+        val path = Uri.parse(u).path ?: ""
+        val isHistory = u.startsWith(HISTORY_URL)
+        onReaderPage = !isHistory && (path.startsWith("/roll_manga/") || pagedChapter.containsMatchIn(path))
+        navSearch.isSelected = !isHistory && path.startsWith("/search")
+        navHome.isSelected = !isHistory && (path == "" || path == "/" || path.startsWith("/index"))
+        navHistory.isSelected = isHistory
+        navBookmark.isSelected = !isHistory && path.startsWith("/bookmark")
+        val show = !onReaderPage && !imeVisible
+        val vis = if (show) View.VISIBLE else View.GONE
+        if (bottomNav.visibility != vis) {
+            bottomNav.visibility = vis
+            bottomNavLine.visibility = vis
+        }
+    }
 
     private fun openHistory() {
         val html = assets.open("history.html").bufferedReader().use { it.readText() }
@@ -103,6 +129,12 @@ class MainActivity : AppCompatActivity() {
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
+            // Sembunyikan bilah bawah saat keyboard muncul, supaya ruang ketik lega
+            val imeNow = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (imeNow != imeVisible) {
+                imeVisible = imeNow
+                v.post { updateBottomNav() }
+            }
             WindowInsetsCompat.CONSUMED
         }
         WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -145,14 +177,16 @@ class MainActivity : AppCompatActivity() {
         // Riwayat baca: disimpan di aplikasi, diakses dari history.js dan history.html
         webView.addJavascriptInterface(HistoryBridge(), "MFHistory")
         historyJs = assets.open("history.js").bufferedReader().use { it.readText() }
-        historyButton = findViewById(R.id.historyButton)
-        historyButton.setOnClickListener {
-            if (webView.url?.startsWith(HISTORY_URL) == true) {
-                if (webView.canGoBack()) webView.goBack() else webView.loadUrl(getString(R.string.start_url))
-            } else {
-                openHistory()
-            }
-        }
+        bottomNav = findViewById(R.id.bottomNav)
+        bottomNavLine = findViewById(R.id.bottomNavLine)
+        navSearch = findViewById(R.id.navSearch)
+        navHome = findViewById(R.id.navHome)
+        navHistory = findViewById(R.id.navHistory)
+        navBookmark = findViewById(R.id.navBookmark)
+        navSearch.setOnClickListener { webView.loadUrl("https://m.fanfox.net/search") }
+        navHome.setOnClickListener { webView.loadUrl(getString(R.string.start_url)) }
+        navHistory.setOnClickListener { if (webView.url?.startsWith(HISTORY_URL) != true) openHistory() }
+        navBookmark.setOnClickListener { webView.loadUrl("https://m.fanfox.net/bookmark") }
 
         // Tarik untuk refresh hanya saat halaman berada di paling atas
         swipe.setColorSchemeColors(getColor(R.color.accent))
@@ -282,6 +316,13 @@ class MainActivity : AppCompatActivity() {
     // Sembunyikan sisa elemen iklan + izinkan zoom walau situs mematikannya
     private val pageJs = """
         (function(){
+          // Footer (Z6 Shop, Manga App, dll.) dan menu atas situs diganti bilah navigasi aplikasi
+          if (!document.getElementById('__mf_chrome')) {
+            var ch = document.createElement('style');
+            ch.id = '__mf_chrome';
+            ch.textContent = 'footer{display:none!important}nav.menu{display:none!important}';
+            (document.head || document.documentElement).appendChild(ch);
+          }
           if (!document.getElementById('__komik_css')) {
             var s = document.createElement('style');
             s.id = '__komik_css';
@@ -582,6 +623,11 @@ class MainActivity : AppCompatActivity() {
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             errorView.visibility = View.GONE
+            updateBottomNav(url)
+        }
+
+        override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
+            updateBottomNav(url)
         }
 
         // Jalankan penyaring sedini mungkin, saat halaman mulai tampil
