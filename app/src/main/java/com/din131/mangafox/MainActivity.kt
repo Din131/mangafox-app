@@ -370,56 +370,29 @@ class MainActivity : AppCompatActivity() {
             fullTitles();
             setInterval(fullTitles, 1500); // daftar bisa bertambah saat digulir (infinite scroll)
           }
-          // Daftar bergaya list (All, hasil pencarian, genre, dll.): ubah jadi grid seperti beranda.
-          // Judul lengkap & tebal, genre + status kecil di bawahnya, "Rank" disembunyikan.
+          // Daftar bergaya list (All, hasil pencarian, genre, bookmark): susunan tetap satu per baris,
+          // tapi sampul lebih besar dan tulisan lebih tebal/gelap. Judul ditampilkan lengkap.
           if (document.querySelector('ul.post-list') && !window.__mfList) {
             window.__mfList = true;
             var lst = document.createElement('style');
             lst.textContent =
-              'ul.post-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;' +
-                'gap:16px 10px!important;padding:12px!important;margin:0!important;letter-spacing:0!important}' +
-              'ul.post-list>li{display:block!important;width:auto!important;min-width:0!important;max-width:none!important;' +
-                'margin:0!important;padding:0!important;float:none!important}' +
-              'ul.post-list .post-one{padding:0!important;border:0!important;position:relative}' +
-              'ul.post-list .post-one>a{display:block!important}' +
-              'ul.post-list .post-one .cover{float:none!important;display:block!important;width:100%!important;height:auto!important;' +
-                'aspect-ratio:2/3;border:0!important;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.18);background:#eee}' +
-              'ul.post-list .post-one .cover img{width:100%!important;height:100%!important;object-fit:cover;display:block}' +
-              'ul.post-list .post-one .cover-info{padding:0!important;margin:6px 2px 0!important}' +
-              'ul.post-list .post-one .cover-info p{margin:0!important;font-size:11.5px!important;line-height:1.35!important;color:#777!important;' +
-                'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
-              'ul.post-list .post-one .cover-info p.title,ul.post-list .post-one .cover-info p.title a{font-size:13px!important;font-weight:600;' +
-                'color:#222!important;white-space:normal;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:2px!important}' +
-              'ul.post-list .post-one .cover-info p.mf-rank{display:none!important}' +
-              'ul.post-list .post-one .reader-icon{display:none!important}' +
-              // Tombol hapus (di halaman bookmark) jadi bulatan kecil di pojok sampul
-              'ul.post-list .post-one .del-button{top:6px!important;right:6px!important;bottom:auto!important;width:30px!important;height:30px!important;border-radius:50%}' +
-              'ul.post-list .post-one .del-button i{width:30px!important;height:30px!important;font-size:18px!important;padding:6px 0 0 6px!important;' +
-                'background:rgba(255,255,255,.9)!important}';
+              'ul.post-list .post-one{padding:10px 12px!important;min-height:156px;box-sizing:content-box}' +
+              'ul.post-list .post-one .cover{width:104px!important;height:156px!important;border:0!important;' +
+                'border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.18);background:#eee}' +
+              'ul.post-list .post-one .cover img{object-fit:cover}' +
+              'ul.post-list .post-one .cover-info{padding-left:120px!important}' +
+              'ul.post-list .post-one .cover-info p{color:#555!important;font-size:14px!important;margin-top:6px!important;line-height:1.35!important}' +
+              'ul.post-list .post-one .cover-info p a{color:#555!important}' +
+              'ul.post-list .post-one .cover-info p.title,ul.post-list .post-one .cover-info p.title a{color:#1d1d1d!important;' +
+                'font-size:16px!important;font-weight:700!important;margin-top:2px!important;line-height:1.3!important}';
             (document.head || document.documentElement).appendChild(lst);
             var tidyList = function () {
-              // Hilangkan bingkai abu-abu di sekitar daftar supaya grid selebar layar
-              var uls = document.querySelectorAll('ul.post-list');
-              for (var ui = 0; ui < uls.length; ui++) {
-                var par = uls[ui].parentElement;
-                if (par && par !== document.body && !par.__mfFlat) {
-                  par.__mfFlat = true;
-                  par.style.setProperty('padding', '0', 'important');
-                  par.style.setProperty('margin', '0', 'important');
-                  par.style.setProperty('background', '#fff', 'important');
-                }
-              }
               var items = document.querySelectorAll('ul.post-list .post-one');
               for (var li = 0; li < items.length; li++) {
-                var it = items[li];
-                var ti = it.querySelector('.cover-info p.title');
-                var im = it.querySelector('.cover img');
+                var ti = items[li].querySelector('.cover-info p.title');
+                var im = items[li].querySelector('.cover img');
                 var fullT = im && im.getAttribute('title');
                 if (ti && fullT && !ti.querySelector('a') && ti.textContent.trim() !== fullT) ti.textContent = fullT;
-                var ps = it.querySelectorAll('.cover-info p');
-                for (var pj = 0; pj < ps.length; pj++) {
-                  if (/^\s*Rank\s*:/i.test(ps[pj].textContent)) ps[pj].classList.add('mf-rank');
-                }
               }
             };
             tidyList();
