@@ -34,6 +34,22 @@
   .btn.primary { background:var(--green); color:#fff; }
   .btn.ghost { background:#eef3e6; color:var(--green-dark); }
   .del { flex:none; background:none; border:0; color:#a3aa9c; font-size:20px; line-height:1; padding:0 4px; align-self:flex-start; }
+  .pos { margin-top:3px; font-size:14px; color:var(--text); }
+  .pos b { font-weight:700; }
+  .pos .done { color:var(--green-dark); font-weight:600; }
+  .item { flex-wrap:wrap; }
+  .chapters { flex-basis:100%; margin-top:2px; }
+  .toggle { width:100%; background:none; border:0; border-top:1px solid var(--line); color:var(--green-dark);
+            font:600 13px system-ui, sans-serif; padding:9px 0 1px; text-align:left; }
+  .chlist { display:none; margin:4px 0 0; padding:0; list-style:none; }
+  .chapters.open .chlist { display:block; }
+  .chlist a { display:flex; align-items:center; gap:10px; padding:8px 4px; border-radius:8px; text-decoration:none; color:var(--text); }
+  .chlist a:active { background:#eef3e6; }
+  .chlist .name { flex:1; font-size:14px; font-weight:600; }
+  .chlist .page { font-size:13px; color:var(--muted); white-space:nowrap; }
+  .chlist .page.ok { color:var(--green-dark); font-weight:600; }
+  .chlist .mini { width:46px; height:4px; background:var(--line); border-radius:2px; overflow:hidden; flex:none; }
+  .chlist .mini span { display:block; height:100%; background:var(--green); }
   .empty { text-align:center; color:var(--muted); padding:60px 24px; }
   .empty b { display:block; color:var(--text); font-size:16px; margin-bottom:6px; }
 </style>
@@ -50,6 +66,7 @@
 <script>
 (function () {
   var listEl = document.getElementById('list');
+  var openSet = {}; // manga yang daftar chapternya sedang dibuka
   var qEl = document.getElementById('q');
 
   function load() {
@@ -70,6 +87,18 @@
     if (cls) e.className = cls;
     if (text != null) e.textContent = text;
     return e;
+  }
+  // "V25 Ch282" -> "Vol. 25 · Chapter 282", "Ch2" -> "Chapter 2"
+  function chapterName(label, num) {
+    var m = /V(?:ol\.?)?\s*([^\s]+)\s*Ch\.?\s*([\d.]+)/i.exec(label || '');
+    if (m && m[1] !== 'TBD' && m[1] !== 'TBE') return 'Vol. ' + m[1] + ' \u00b7 Chapter ' + m[2];
+    var c = /Ch\.?\s*([\d.]+)/i.exec(label || '');
+    return 'Chapter ' + (c ? c[1] : num);
+  }
+  function pageText(e) {
+    if (e.done) return null;
+    if (e.n) return 'Halaman ' + ((e.p || 0) + 1) + ' dari ' + e.n;
+    return 'Halaman 1';
   }
   function prettySlug(s) {
     return s.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
@@ -111,9 +140,13 @@
       var t = el('a', 'title', title);
       t.href = 'https://m.fanfox.net/manga/' + slug + '/';
       info.appendChild(t);
-      var status = e.done ? 'selesai' : (e.n ? 'hal. ' + ((e.p || 0) + 1) + ' / ' + e.n : '');
-      info.appendChild(el('div', 'meta', (m.lastLabel || ('Ch ' + m.last)) + (status ? ' • ' + status : '')));
-      info.appendChild(el('div', 'meta', ago(m.at || 0) + ' • ' + readCount + ' chapter dibaca'));
+      var pos = el('div', 'pos');
+      pos.appendChild(el('b', null, chapterName(m.lastLabel, m.last)));
+      var pt = pageText(e);
+      pos.appendChild(document.createTextNode(' \u2022 '));
+      pos.appendChild(pt ? document.createTextNode(pt) : el('span', 'done', 'Selesai \u2713'));
+      info.appendChild(pos);
+      info.appendChild(el('div', 'meta', ago(m.at || 0)));
       if (e.n && !e.done) {
         var bar = el('div', 'bar'), fill = el('span');
         fill.style.width = Math.round(((e.p || 0) + 1) / e.n * 100) + '%';
@@ -135,6 +168,44 @@
       };
 
       item.appendChild(cover); item.appendChild(info); item.appendChild(del);
+
+      // Semua chapter yang pernah dibaca, terbaru di atas
+      var nums = m.ch ? Object.keys(m.ch) : [];
+      if (nums.length) {
+        nums.sort(function (a, b) { return parseFloat(b) - parseFloat(a); });
+        var box = el('div', 'chapters' + (openSet[slug] ? ' open' : ''));
+        var tg = el('button', 'toggle');
+        var setLabel = function () {
+          tg.textContent = (box.classList.contains('open') ? '\u25be ' : '\u25b8 ') +
+            nums.length + ' chapter dibaca';
+        };
+        setLabel();
+        tg.onclick = function () {
+          box.classList.toggle('open');
+          openSet[slug] = box.classList.contains('open');
+          setLabel();
+        };
+        var ul = el('ul', 'chlist');
+        nums.forEach(function (n) {
+          var c = m.ch[n] || {};
+          var li = el('li'), a = el('a');
+          a.href = c.u || ('https://m.fanfox.net/manga/' + slug + '/');
+          a.appendChild(el('span', 'name', chapterName(c.l, n)));
+          if (c.done) {
+            a.appendChild(el('span', 'page ok', 'Selesai \u2713'));
+          } else {
+            a.appendChild(el('span', 'page', c.n ? 'Hal. ' + ((c.p || 0) + 1) + '/' + c.n : 'Hal. 1'));
+            if (c.n) {
+              var mini = el('span', 'mini'), f = el('span');
+              f.style.width = Math.round(((c.p || 0) + 1) / c.n * 100) + '%';
+              mini.appendChild(f); a.appendChild(mini);
+            }
+          }
+          li.appendChild(a); ul.appendChild(li);
+        });
+        box.appendChild(tg); box.appendChild(ul);
+        item.appendChild(box);
+      }
       listEl.appendChild(item);
     });
 

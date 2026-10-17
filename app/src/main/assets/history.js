@@ -64,10 +64,12 @@
     var titleEl = document.querySelector('.mangaread-title');
     var label = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : ('Ch ' + ch);
     var prev = m.ch[ch];
-    m.ch[ch] = { p: prev ? prev.p : 0, n: prev ? prev.n : 0, done: prev ? prev.done : false, at: Date.now() };
+    var chUrl = 'https://m.fanfox.net/roll_manga/' + slug + '/' + rm[2].replace(/\/?$/, '/') + '1.html';
+    m.ch[ch] = { p: prev ? prev.p : 0, n: prev ? prev.n : 0, done: prev ? prev.done : false, at: Date.now(),
+                 u: chUrl, l: label };
     m.last = ch;
     m.lastLabel = label;
-    m.lastUrl = 'https://m.fanfox.net/roll_manga/' + slug + '/' + rm[2].replace(/\/?$/, '/') + '1.html';
+    m.lastUrl = chUrl;
     m.at = Date.now();
     save(h);
 
@@ -99,6 +101,11 @@
       saveTimer = setTimeout(record, 700);
     }, { passive: true });
     document.addEventListener('visibilitychange', function () { if (document.hidden) record(); });
+    // Simpan juga saat pindah halaman (misalnya langsung ketuk "Next Chapter")
+    window.addEventListener('pagehide', record);
+    window.addEventListener('beforeunload', record);
+    // Catat jumlah halaman segera setelah halaman siap, walau belum digulir
+    setTimeout(record, 1500);
 
     // Lanjutkan dari halaman terakhir kalau chapter ini belum selesai dibaca
     if (prev && !prev.done && prev.p > 0) {
