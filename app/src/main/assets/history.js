@@ -50,6 +50,77 @@
     setTimeout(function () { el.remove(); }, 3000);
   }
 
+  // ---------- Rating, penulis & genre lengkap dari newm (halaman detail) ----------
+  // Diambil lewat aplikasi (window.MFNet) dan disimpan 3 hari di localStorage 'mfr:<slug>'
+  // (cache yang sama dipakai halaman Cari).
+  function netGet(url, cb) {
+    if (!window.MFNet) { cb(null); return; }
+    window.__mfNetCbs = window.__mfNetCbs || {};
+    if (!window.__mfNet) {
+      window.__mfNet = function (id, ok, text) {
+        var f = window.__mfNetCbs[id]; delete window.__mfNetCbs[id]; if (f) f(ok ? text : null);
+      };
+    }
+    var id = 'h' + Date.now() + Math.random().toString(36).slice(2);
+    window.__mfNetCbs[id] = cb;
+    window.MFNet.fetch(url, id);
+  }
+  function showExtraInfo(slug) {
+    var box = document.querySelector('.manga-detail-top .detail-info');
+    if (!box || box.querySelector('.mf-extra')) return;
+    var KEY = 'mfr:' + slug, TTL = 3 * 86400000, cached = null;
+    try { cached = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    var render = function (d) {
+      var old = box.querySelector('.mf-extra'); if (old) old.remove();
+      var wrap = document.createElement('div');
+      wrap.className = 'mf-extra';
+      var r = parseFloat(d.r);
+      var rp = document.createElement('p');
+      rp.className = 'mf-rating';
+      rp.textContent = r ? '★ ' + String(d.r).trim() : 'Belum ada rating';
+      if (!r) rp.classList.add('none');
+      wrap.appendChild(rp);
+      if (d.g && d.g.length) {
+        var gp = document.createElement('p');
+        gp.textContent = 'Genre: ' + d.g.join(', ');
+        wrap.appendChild(gp);
+      }
+      box.insertBefore(wrap, box.firstChild);
+      // Lengkapi penulis kalau newm mencantumkan lebih banyak
+      if (d.a && d.a.length > 1) {
+        [].forEach.call(box.querySelectorAll('p'), function (p) {
+          if (/^\s*Author\(s\):/i.test(p.textContent)) {
+            var have = p.textContent.toLowerCase();
+            var extra = d.a.filter(function (n) { return have.indexOf(n.toLowerCase()) < 0; });
+            if (extra.length) p.appendChild(document.createTextNode(', ' + extra.join(', ')));
+          }
+        });
+      }
+    };
+    if (!document.getElementById('__mf_extra_css')) {
+      var st = document.createElement('style');
+      st.id = '__mf_extra_css';
+      st.textContent = '.mf-extra p{margin-top:5px!important;color:#555!important}' +
+        '.mf-extra .mf-rating{font-size:16px!important;font-weight:700!important;color:#b07a00!important}' +
+        '.mf-extra .mf-rating.none{color:#8a9283!important;font-weight:500!important}';
+      document.head.appendChild(st);
+    }
+    if (cached && cached.g && Date.now() - cached.at < TTL) { render(cached); return; }
+    netGet('https://newm.fanfox.net/manga/' + slug + '/', function (html) {
+      if (!html) { if (cached) render(cached); return; }
+      var d = new DOMParser().parseFromString(html, 'text/html');
+      var rs = d.querySelector('.detail-top-bar-info-star span');
+      var data = {
+        r: rs ? rs.textContent.trim() : '0',
+        a: [].map.call(d.querySelectorAll('.detail-author-bar a'), function (x) { return x.textContent.trim(); }).filter(Boolean),
+        g: [].map.call(d.querySelectorAll('.detail-tag-bar a'), function (x) { return x.textContent.trim(); }).filter(Boolean),
+        at: Date.now()
+      };
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+      render(data);
+    });
+  }
+
   // ---------- Halaman baca ----------
   var rm = /^\/roll_manga\/([^\/]+)\/(.*?)\/?(?:\d+\.html)?$/.exec(path);
   if (rm) {
@@ -68,6 +139,8 @@
     m.ch[ch] = { p: prev ? prev.p : 0, n: prev ? prev.n : 0, done: prev ? prev.done : false, at: Date.now(),
                  u: chUrl, l: label };
     m.last = ch;
+    // Daftar "chapter baru" dihitung ulang saat Riwayat dibuka berikutnya
+    m.newCh = 0; m.chkAt = 0;
     m.lastLabel = label;
     m.lastUrl = chUrl;
     m.at = Date.now();
@@ -131,6 +204,7 @@
   var dm = /^\/manga\/([^\/]+)\/?$/.exec(path);
   if (dm && document.querySelector('.manga-detail')) {
     var s = dm[1];
+    showExtraInfo(s);
     var hist = load();
     // Simpan judul & sampul (link sampul dari situs punya masa berlaku, jadi selalu diperbarui)
     var titleP = document.querySelector('.manga-detail-top .title');

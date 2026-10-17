@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Cari</title>
+<style>
+  :root { --green:#75b520; --green-dark:#5a8f16; --red:#d64545; --bg:#f2f4ef; --card:#fff; --text:#1d2418;
+          --muted:#6b7464; --line:#e3e7dd; --chip:#eef3e6; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui, -apple-system, Roboto, sans-serif; }
+  header { position:sticky; top:0; z-index:3; background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+  .bar { display:flex; align-items:center; height:52px; padding:0 14px; }
+  .bar h1 { margin:0; font-size:18px; font-weight:600; }
+  .tabs { display:flex; padding:0 8px; }
+  .tabs button { flex:1; background:none; border:0; color:rgba(255,255,255,.8); font:600 14px system-ui, sans-serif;
+                 padding:10px 0 11px; border-bottom:3px solid transparent; }
+  .tabs button.on { color:#fff; border-bottom-color:#fff; }
+  .search { padding:12px 12px 0; }
+  .search form { position:relative; margin:0; }
+  .search input { width:100%; height:46px; border:1px solid var(--line); background:#fff; border-radius:10px;
+                  padding:10px 70px 10px 12px; font:inherit; color:var(--text); -webkit-appearance:none; }
+  .search input:focus { outline:2px solid var(--green); border-color:transparent; }
+  .search button { position:absolute; top:6px; right:6px; width:56px; height:34px; border:0; border-radius:8px;
+                   background:var(--green); color:#fff; font:600 14px system-ui, sans-serif; }
+  section { padding:0 12px; }
+  .filters { background:var(--card); border-radius:12px; margin:12px 0 0; padding:4px 12px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .group { padding:10px 0 4px; border-bottom:1px solid var(--line); }
+  .group:last-child { border-bottom:0; }
+  .glabel { display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700;
+            color:var(--muted); text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px; }
+  .glabel small { text-transform:none; letter-spacing:0; font-weight:500; }
+  .glabel button { background:none; border:0; color:var(--green-dark); font:600 13px system-ui, sans-serif; padding:0; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chips.collapsed { max-height:76px; overflow:hidden; }
+  .chip { border:1px solid var(--line); background:#fff; color:var(--text); border-radius:999px; padding:6px 12px;
+          font:500 13px system-ui, sans-serif; }
+  .chip.on { background:var(--green); border-color:var(--green); color:#fff; }
+  .chip.ex { background:#fdeaea; border-color:#f3b9b9; color:var(--red); text-decoration:line-through; }
+  .hint { font-size:12px; color:var(--muted); margin:6px 0 2px; }
+  .hint.warn { color:#9a6b00; }
+  .chip:disabled { opacity:.4; }
+  .actions { display:flex; gap:8px; padding-top:10px; }
+  .actions button { flex:1; border:0; border-radius:8px; padding:10px; font:600 14px system-ui, sans-serif; }
+  .apply { background:var(--green); color:#fff; }
+  .reset { background:var(--chip); color:var(--green-dark); }
+  .summary { display:flex; align-items:center; justify-content:space-between; margin:14px 2px 8px; font-size:13px; color:var(--muted); }
+  .summary button { background:none; border:0; color:var(--green-dark); font:600 13px system-ui, sans-serif; padding:0; }
+  .item { display:flex; gap:12px; background:var(--card); border-radius:12px; padding:10px; margin-bottom:10px;
+          box-shadow:0 1px 2px rgba(0,0,0,.06); text-decoration:none; color:inherit; position:relative; }
+  .cover { flex:none; width:72px; height:108px; border-radius:8px; overflow:hidden; background:var(--line);
+           display:flex; align-items:center; justify-content:center; color:var(--green-dark); font-weight:700; font-size:22px; }
+  .cover img { width:100%; height:100%; object-fit:cover; display:block; }
+  .info { flex:1; min-width:0; }
+  .title { font-weight:700; font-size:15px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .meta { color:var(--muted); font-size:13px; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .score { display:inline-flex; align-items:center; gap:4px; margin-top:6px; margin-right:6px; font-size:13px; font-weight:700; color:#b07a00; }
+  .score.none { color:var(--muted); font-weight:500; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; margin-top:6px; margin-right:4px; }
+  .tag.done { background:#e6f2d8; color:var(--green-dark); }
+  .tag.on { background:#e8eefb; color:#3559a8; }
+  .rank { position:absolute; top:6px; left:6px; min-width:24px; height:24px; padding:0 6px; border-radius:12px;
+          background:rgba(0,0,0,.72); color:#fff; font:700 12px/24px system-ui, sans-serif; text-align:center; }
+  .rank.r1 { background:#e0a100; } .rank.r2 { background:#8c96a0; } .rank.r3 { background:#b46a35; }
+  .state { text-align:center; color:var(--muted); padding:28px 16px; font-size:14px; }
+  .state button { margin-top:10px; border:0; background:var(--green); color:#fff; border-radius:8px; padding:9px 16px; font:600 14px system-ui, sans-serif; }
+  .periods { display:flex; gap:6px; margin:12px 0 10px; }
+  .periods .chip { flex:1; text-align:center; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar"><h1>Cari</h1></div>
+  <div class="tabs">
+    <button id="tabBrowse" class="on">Jelajah</button>
+    <button id="tabRank">Ranking</button>
+  </div>
+</header>
+
+<div class="search">
+  <form id="titleForm" action="javascript:void(0)">
+    <input id="titleInput" type="search" placeholder="Cari judul manga…" autocomplete="off" enterkeyhint="search">
+    <button type="submit">GO</button>
+  </form>
+</div>
+
+<!-- ================= JELAJAH ================= -->
+<section id="browse">
+  <div class="filters">
+    <div class="group">
+      <div class="glabel"><span>Genre <small id="genreSummary"></small></span><button id="genreMore">Lihat semua</button></div>
+      <div id="genres" class="chips collapsed"></div>
+      <div class="hint">Ketuk sekali untuk <b style="color:var(--green-dark)">menyertakan</b>, sekali lagi untuk <b style="color:var(--red)">mengecualikan</b>.</div>
+    </div>
+    <div class="group">
+      <div class="glabel"><span>Jenis</span></div>
+      <div id="types" class="chips"></div>
+    </div>
+    <div class="group">
+      <div class="glabel"><span>Status</span></div>
+      <div id="statuses" class="chips"></div>
+    </div>
+    <div class="group">
+      <div class="glabel"><span>Rating</span></div>
+      <div id="ratings" class="chips"></div>
+    </div>
+    <div class="group">
+      <div class="glabel"><span>Urutkan</span></div>
+      <div id="sorts" class="chips"></div>
+      <div id="sortHint" class="hint warn hidden"></div>
+    </div>
+    <div class="actions">
+      <button class="reset" id="resetBtn">Reset</button>
+      <button class="apply" id="applyBtn">Tampilkan</button>
+    </div>
+  </div>
+  <div class="summary"><span id="resultInfo"></span><button id="toTop" class="hidden">↑ Filter</button></div>
+  <div id="results"></div>
+  <div id="browseState" class="state hidden"></div>
+  <div id="sentinel" style="height:1px"></div>
+</section>
+
+<!-- ================= RANKING ================= -->
+<section id="ranking" class="hidden">
+  <div class="periods" id="periods"></div>
+  <div id="rankList"></div>
+  <div id="rankState" class="state hidden"></div>
+</section>
+
+<script>
+(function () {
+  // ---------- Data pilihan ----------
+  var GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Martial Arts','Shounen','Horror','Supernatural','Harem',
+    'Psychological','Romance','School Life','Shoujo','Mystery','Sci-fi','Seinen','Tragedy','Ecchi','Sports','Slice of Life',
+    'Mature','Shoujo Ai','Webtoons','Doujinshi','One Shot','Smut','Yaoi','Josei','Historical','Shounen Ai','Gender Bender',
+    'Adult','Yuri','Mecha'];                 // ID = urutan (Action = 1, dst.) sesuai pencarian lanjutan fanfox.net
+  var TYPES = [['0','Semua'],['1','Manga'],['2','Manhwa'],['3','Manhua']];
+  var STATUSES = [['all','Semua'],['ongoing','Ongoing'],['completed','Completed']];
+  var RATINGS = [['0','Semua'],['3','Di atas ★3'],['4','Di atas ★4']];
+  var SORTS = [['pop','Populer'],['rating','Rating'],['latest','Update terbaru'],['news','Manga baru'],['az','A–Z']];
+  var PERIODS = [['dayranking','Harian'],['weekranking','Mingguan'],['monthranking','Bulanan'],['totalranking','Total']];
+
+  var DEFAULT = { g: {}, type: '0', st: 'all', rate: '0', sort: 'pop' };
+  var f = load('mfSearchFilter', DEFAULT);       // filter terakhir diingat
+  if (!f.g) f.g = {};
+
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v || JSON.parse(JSON.stringify(d)); } catch (e) { return JSON.parse(JSON.stringify(d)); } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  // ---------- Ambil halaman lewat aplikasi ----------
+  var pending = {}, seq = 0;
+  window.__mfNet = function (id, ok, text) { var cb = pending[id]; delete pending[id]; if (cb) cb(ok ? text : null); };
+  function net(url, cb) {
+    if (!window.MFNet) { cb(null); return; }
+    var id = 's' + (++seq); pending[id] = cb;
+    window.MFNet.fetch(url, id);
+  }
+  function parse(html) { return new DOMParser().parseFromString(html, 'text/html'); }
+  function abs(u) {
+    if (!u) return '';
+    u = u.trim();
+    if (u.indexOf('//') === 0) return 'https:' + u;
+    if (u.charAt(0) === '/') return 'https://fanfox.net' + u;
+    return u;
+  }
+  function slugOf(href) { var m = /\/manga\/([^\/?#]+)/.exec(href || ''); return m ? m[1] : null; }
+
+  // ---------- Cache rating (dipakai bersama halaman detail) ----------
+  var RATING_TTL = 3 * 86400000;
+  function cachedRating(slug) {
+    try { var v = JSON.parse(localStorage.getItem('mfr:' + slug)); if (v && Date.now() - v.at < RATING_TTL) return v; } catch (e) {}
+    return null;
+  }
+  function saveRating(slug, r) { store('mfr:' + slug, { r: r, at: Date.now() }); }
+
+  // ---------- Kartu manga ----------
+  function card(m, rankNo) {
+    var a = el('a', 'item');
+    a.href = 'https://m.fanfox.net/manga/' + m.slug + '/';
+    var cover = el('div', 'cover');
+    if (m.cover) {
+      var img = el('img'); img.loading = 'lazy'; img.src = m.cover; img.alt = '';
+      img.onerror = function () { cover.textContent = (m.title || '?').charAt(0).toUpperCase(); };
+      cover.appendChild(img);
+    } else cover.textContent = (m.title || '?').charAt(0).toUpperCase();
+    a.appendChild(cover);
+    if (rankNo) a.appendChild(el('span', 'rank' + (rankNo <= 3 ? ' r' + rankNo : ''), String(rankNo)));
+    var info = el('div', 'info');
+    info.appendChild(el('div', 'title', m.title));
+    if (m.latest) info.appendChild(el('div', 'meta', 'Terbaru: ' + m.latest));
+    if (m.author) info.appendChild(el('div', 'meta', m.author));
+    var line = el('div');
+    if (m.status) line.appendChild(el('span', 'tag ' + (/complete/i.test(m.status) ? 'done' : 'on'), m.status));
+    var sc = el('span', 'score');
+    line.appendChild(sc);
+    info.appendChild(line);
+    a.appendChild(info);
+    setScore(sc, m.score);
+    if (m.score == null) { a.__needRating = { slug: m.slug, el: sc }; ratingObserver.observe(a); }
+    return a;
+  }
+  function setScore(sc, score) {
+    if (score == null) { sc.className = 'score none'; sc.textContent = ''; return; }
+    var v = parseFloat(score);
+    if (!v) { sc.className = 'score none'; sc.textContent = 'Belum ada rating'; return; }
+    sc.className = 'score'; sc.textContent = '★ ' + String(score).trim();
+  }
+
+  // Rating untuk hasil pencarian lanjutan (tidak disertakan situs): ambil dari newm, bertahap
+  var rq = [], rRunning = 0;
+  var ratingObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      ratingObserver.unobserve(en.target);
+      var need = en.target.__needRating; if (!need) return;
+      var c = cachedRating(need.slug);
+      if (c) { setScore(need.el, c.r); return; }
+      need.el.className = 'score none'; need.el.textContent = '★ …';
+      rq.push(need); pumpRating();
+    });
+  }, { rootMargin: '200px' });
+  function pumpRating() {
+    while (rRunning < 2 && rq.length) {
+      var need = rq.shift(); rRunning++;
+      (function (need) {
+        net('https://newm.fanfox.net/manga/' + need.slug + '/', function (html) {
+          rRunning--;
+          var r = null;
+          if (html) {
+            var d = parse(html), s = d.querySelector('.detail-top-bar-info-star span');
+            if (s) { r = s.textContent.trim(); saveRating(need.slug, r); }
+          }
+          setScore(need.el, r == null ? null : r);
+          pumpRating();
+        });
+      })(need);
+    }
+  }
+
+  // ---------- Bangun pilihan filter ----------
+  function chips(container, list, key, onChange) {
+    var box = $(container); box.innerHTML = '';
+    list.forEach(function (o) {
+      var b = el('button', 'chip' + (f[key] === o[0] ? ' on' : ''), o[1]);
+      b.dataset.v = o[0];
+      b.onclick = function () { f[key] = o[0]; refreshChips(); if (onChange) onChange(); };
+      box.appendChild(b);
+    });
+  }
+  function buildGenres() {
+    var box = $('genres'); box.innerHTML = '';
+    GENRES.forEach(function (name, i) {
+      var id = String(i + 1);
+      var b = el('button', 'chip', name);
+      b.onclick = function () {
+        var cur = f.g[id];
+        if (!cur) f.g[id] = 'in'; else if (cur === 'in') f.g[id] = 'ex'; else delete f.g[id];
+        refreshChips();
+      };
+      b.dataset.id = id;
+      box.appendChild(b);
+    });
+  }
+  function counts() {
+    var inc = [], exc = [];
+    Object.keys(f.g).forEach(function (k) { (f.g[k] === 'in' ? inc : exc).push(k); });
+    return { inc: inc, exc: exc };
+  }
+  // Mode direktori (cepat, ada rating, semua urutan) vs pencarian lanjutan (multi-genre dll.)
+  function useDirectory() {
+    var c = counts();
+    return c.inc.length <= 1 && c.exc.length === 0 && f.type === '0';
+  }
+  function refreshChips() {
+    [].forEach.call($('genres').children, function (b) {
+      var s = f.g[b.dataset.id];
+      b.className = 'chip' + (s === 'in' ? ' on' : s === 'ex' ? ' ex' : '');
+    });
+    [['types','type'],['statuses','st'],['ratings','rate'],['sorts','sort']].forEach(function (p) {
+      [].forEach.call($(p[0]).children, function (b) { b.classList.toggle('on', f[p[1]] === b.dataset.v); });
+    });
+    var c = counts();
+    $('genreSummary').textContent = c.inc.length || c.exc.length ?
+      '• ' + c.inc.length + ' dipilih' + (c.exc.length ? ', ' + c.exc.length + ' dikecualikan' : '') : '';
+    // Urutan yang tidak didukung pencarian lanjutan
+    var dir = useDirectory();
+    [].forEach.call($('sorts').children, function (b) {
+      var ok = dir || b.dataset.v === 'pop' || b.dataset.v === 'az';
+      b.disabled = !ok;
+    });
+    if (!dir && f.sort !== 'pop' && f.sort !== 'az') { f.sort = 'pop'; refreshChips(); return; }
+    var hint = $('sortHint');
+    if (!dir) {
+      hint.textContent = 'Urutan Rating, Update terbaru, dan Manga baru hanya tersedia dengan maksimal 1 genre, ' +
+        'tanpa genre yang dikecualikan, dan jenis "Semua".';
+      hint.classList.remove('hidden');
+    } else hint.classList.add('hidden');
+    store('mfSearchFilter', f);
+  }
+
+  // ---------- URL & pembaca hasil ----------
+  var SORT_Q = { pop: '', rating: 'rating', latest: 'latest', news: 'news', az: 'az' };
+  function genreSlug(name) { return name.toLowerCase().replace(/\s+/g, '-'); }
+  function dirUrl(page) {
+    var c = counts(), path = 'https://fanfox.net/directory/';
+    if (c.inc.length) path += genreSlug(GENRES[parseInt(c.inc[0], 10) - 1]) + '/';
+    if (f.st !== 'all') path += f.st + '/';
+    if (page > 1) path += page + '.html';
+    var q = SORT_Q[f.sort];
+    return path + (q ? '?' + q : '');
+  }
+  function advUrl(page) {
+    var c = counts();
+    var st = f.st === 'completed' ? '2' : f.st === 'ongoing' ? '1' : '0';
+    var q = [
+      'title=', 'stype=1', 'name=', 'type=' + f.type, 'author_method=cw', 'author=', 'artist_method=cw', 'artist=',
+      'rating_method=gt', 'rating=' + (f.rate === '0' ? '' : f.rate), 'released_method=eq', 'released=', 'st=' + st,
+      'genres=' + encodeURIComponent(c.inc.join(',')), 'nogenres=' + encodeURIComponent(c.exc.join(',')),
+      'sort=' + (f.sort === 'az' ? '1' : '')
+    ].join('&');
+    return 'https://fanfox.net/search?' + (page > 1 ? 'page=' + page + '&' : '') + q;
+  }
+  function readDirectory(d) {
+    var out = [];
+    [].forEach.call(d.querySelectorAll('ul li'), function (li) {
+      var t = li.querySelector('.manga-list-1-item-title a');
+      if (!t) return;
+      var slug = slugOf(t.getAttribute('href')); if (!slug) return;
+      var img = li.querySelector('img.manga-list-1-cover');
+      var sub = li.querySelector('.manga-list-1-item-subtitle a');
+      var sc = li.querySelector('.item-score');
+      out.push({ slug: slug, title: t.getAttribute('title') || t.textContent.trim(),
+        cover: img ? abs(img.getAttribute('src')) : '', latest: sub ? sub.textContent.trim() : '',
+        score: sc ? sc.textContent.trim() : null });
+    });
+    return out;
+  }
+  function readAdvanced(d) {
+    var out = [];
+    [].forEach.call(d.querySelectorAll('ul li'), function (li) {
+      var t = li.querySelector('.manga-list-4-item-title a');
+      if (!t) return;
+      var slug = slugOf(t.getAttribute('href')); if (!slug) return;
+      var img = li.querySelector('img.manga-list-4-cover');
+      var st = li.querySelector('.manga-list-4-show-tag-list-2 a');
+      var tips = li.querySelectorAll('.manga-list-4-item-tip'), latest = '', author = '';
+      [].forEach.call(tips, function (p) {
+        var tx = p.textContent.replace(/\s+/g, ' ').trim();
+        if (/^Latest Chapter:/i.test(tx)) latest = tx.replace(/^Latest Chapter:\s*/i, '');
+        else if (/^Author:/i.test(tx)) author = tx.replace(/^Author:\s*/i, '');
+      });
+      var c = cachedRating(slug);
+      out.push({ slug: slug, title: t.getAttribute('title') || t.textContent.trim(),
+        cover: img ? abs(img.getAttribute('src')) : '', latest: latest, author: author,
+        status: st ? st.textContent.trim() : '', score: c ? c.r : null });
+    });
+    return out;
+  }
+  function lastPage(d) {
+    var max = 1;
+    [].forEach.call(d.querySelectorAll('a[href]'), function (a) {
+      var h = a.getAttribute('href') || '', m = /\/(\d+)\.html/.exec(h) || /[?&]page=(\d+)/.exec(h);
+      if (m && /directory|search/.test(h)) max = Math.max(max, parseInt(m[1], 10));
+    });
+    return max;
+  }
+
+  // ---------- Jelajah: muat hasil bertahap ----------
+  var run = 0, page = 0, maxPage = 1, loading = false, shownCount = 0, seen = {};
+  function startBrowse() {
+    run++; page = 0; maxPage = 1; shownCount = 0; seen = {}; loading = false;
+    $('results').innerHTML = '';
+    $('resultInfo').textContent = '';
+    $('toTop').classList.remove('hidden');
+    loadMore();
+  }
+  function loadMore() {
+    if (loading || page >= maxPage) return;
+    loading = true;
+    var my = run, p = page + 1, dir = useDirectory();
+    showState('browseState', 'Memuat…');
+    net(dir ? dirUrl(p) : advUrl(p), function (html) {
+      if (my !== run) return;
+      loading = false;
+      if (!html) { showState('browseState', 'Gagal memuat hasil.', true); return; }
+      var d = parse(html);
+      var list = dir ? readDirectory(d) : readAdvanced(d);
+      page = p; maxPage = Math.max(lastPage(d), list.length ? p : 0);
+      var min = parseFloat(f.rate) || 0, added = 0;
+      list.forEach(function (m) {
+        if (seen[m.slug]) return; seen[m.slug] = true;
+        // Rating minimal di mode direktori disaring di sini (server tidak mendukungnya)
+        if (dir && min && !(parseFloat(m.score) > min)) return;
+        $('results').appendChild(card(m)); added++; shownCount++;
+      });
+      // Diurutkan berdasarkan rating dan sudah di bawah batas: tidak perlu halaman berikutnya
+      if (dir && min && f.sort === 'rating' && list.length && !(parseFloat(list[list.length - 1].score) > min)) maxPage = page;
+      $('resultInfo').textContent = shownCount + ' manga' + (page < maxPage ? ' • halaman ' + page + ' dari ' + maxPage : '');
+      if (!shownCount && page >= maxPage) showState('browseState', 'Tidak ada manga yang cocok dengan filter ini.');
+      else if (page >= maxPage) showState('browseState', 'Sudah semua.');
+      else hideState('browseState');
+      // Kalau satu halaman habis tersaring, lanjut otomatis
+      if (!added && page < maxPage) loadMore();
+      else checkSentinel();
+    });
+  }
+  function showState(id, text, retry) {
+    var s = $(id); s.innerHTML = ''; s.appendChild(document.createTextNode(text));
+    if (retry) { var b = el('button', null, 'Coba lagi'); b.onclick = function () { s.classList.add('hidden'); id === 'browseState' ? loadMore() : loadRank(curPeriod); };
+      s.appendChild(el('br')); s.appendChild(b); }
+    s.classList.remove('hidden');
+  }
+  function hideState(id) { $(id).classList.add('hidden'); }
+  var io = new IntersectionObserver(function (e) { if (e[0].isIntersecting && page > 0) loadMore(); }, { rootMargin: '600px' });
+  io.observe($('sentinel'));
+  function checkSentinel() {
+    var r = $('sentinel').getBoundingClientRect();
+    if (r.top < window.innerHeight + 600 && !$('browse').classList.contains('hidden')) loadMore();
+  }
+
+  // ---------- Ranking ----------
+  var curPeriod = load('mfRankPeriod', 'weekranking'), rankRun = 0;
+  function buildPeriods() {
+    var box = $('periods'); box.innerHTML = '';
+    PERIODS.forEach(function (p) {
+      var b = el('button', 'chip' + (curPeriod === p[0] ? ' on' : ''), p[1]);
+      b.onclick = function () { curPeriod = p[0]; store('mfRankPeriod', curPeriod); buildPeriods(); loadRank(curPeriod); };
+      box.appendChild(b);
+    });
+  }
+  function loadRank(period) {
+    var my = ++rankRun;
+    $('rankList').innerHTML = '';
+    showState('rankState', 'Memuat…');
+    net('https://newm.fanfox.net/' + period + '/', function (html) {
+      if (my !== rankRun) return;
+      if (!html) { showState('rankState', 'Gagal memuat ranking.', true); return; }
+      var d = parse(html), key = period.replace('ranking', 'rank');
+      // Pilih wadah periode yang berisi daftar (halaman bisa punya wadah kosong untuk periode lain)
+      var root = d, best = 0;
+      [].forEach.call(d.querySelectorAll('.' + key + ', .dayrank, .weekrank, .monthrank, .totalrank'), function (c) {
+        var n = c.querySelectorAll('ul.manga-list-2 li').length;
+        if (n > best || (n && n === best && c.classList.contains(key))) { best = n; root = c; }
+      });
+      var n = 0;
+      [].forEach.call(root.querySelectorAll('ul.manga-list-2 li'), function (li) {
+        var t = li.querySelector('.manga-list-2-title a'); if (!t) return;
+        var slug = slugOf(t.getAttribute('href')); if (!slug) return;
+        var img = li.querySelector('img.manga-list-2-cover-img');
+        var sc = li.querySelector('.item-score');
+        n++;
+        $('rankList').appendChild(card({ slug: slug, title: t.getAttribute('title') || t.textContent.trim(),
+          cover: img ? abs(img.getAttribute('src')) : '', score: sc ? sc.textContent.trim() : null }, n));
+      });
+      if (n) hideState('rankState'); else showState('rankState', 'Ranking belum tersedia.', true);
+    });
+  }
+
+  // ---------- Tab & aksi ----------
+  function showTab(rank) {
+    $('tabBrowse').classList.toggle('on', !rank); $('tabRank').classList.toggle('on', rank);
+    $('browse').classList.toggle('hidden', rank); $('ranking').classList.toggle('hidden', !rank);
+    store('mfSearchTab', rank ? 'rank' : 'browse');
+    if (rank && !$('rankList').children.length) { buildPeriods(); loadRank(curPeriod); }
+    if (!rank && !page) startBrowse();
+  }
+  $('tabBrowse').onclick = function () { showTab(false); };
+  $('tabRank').onclick = function () { showTab(true); };
+  $('applyBtn').onclick = function () { startBrowse(); $('resultInfo').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  $('resetBtn').onclick = function () { f = JSON.parse(JSON.stringify(DEFAULT)); refreshChips(); startBrowse(); };
+  $('toTop').onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  $('genreMore').onclick = function () {
+    var g = $('genres'), c = g.classList.toggle('collapsed');
+    this.textContent = c ? 'Lihat semua' : 'Ringkas';
+  };
+  $('titleForm').onsubmit = function () {
+    var q = $('titleInput').value.trim();
+    if (q) location.href = 'https://m.fanfox.net/search?k=' + encodeURIComponent(q);
+    return false;
+  };
+
+  buildGenres();
+  chips('types', TYPES, 'type');
+  chips('statuses', STATUSES, 'st');
+  chips('ratings', RATINGS, 'rate');
+  chips('sorts', SORTS, 'sort');
+  refreshChips();
+  showTab(load('mfSearchTab', 'browse') === 'rank');
+})();
+</script>
+</body>
+</html>

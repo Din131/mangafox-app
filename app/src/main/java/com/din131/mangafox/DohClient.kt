@@ -57,6 +57,27 @@ object DohClient {
             .build()
     }
 
+    /**
+     * Ambil isi halaman sebagai teks (dipakai fitur Cari, Ranking, dan rating).
+     * null kalau gagal. Cookie WebView ikut dikirim supaya pengaturan situs (misalnya
+     * konfirmasi konten dewasa) tetap berlaku.
+     */
+    fun getText(url: String, userAgent: String): String? {
+        val http = client ?: return null
+        return try {
+            val builder = Request.Builder().url(url)
+                .header("User-Agent", userAgent)
+                .header("Accept", "text/html,application/xhtml+xml")
+                .header("Accept-Language", "en-US,en;q=0.9")
+            CookieManager.getInstance().getCookie(url)?.let { if (it.isNotEmpty()) builder.header("Cookie", it) }
+            http.newCall(builder.build()).execute().use { r ->
+                if (!r.isSuccessful) null else r.body?.string()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** null = biarkan WebView memuat sendiri dengan jaringan biasa. */
     fun fetch(request: WebResourceRequest, userAgent: String): WebResourceResponse? {
         val http = client ?: return null

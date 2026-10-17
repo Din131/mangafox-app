@@ -38,6 +38,15 @@ class MainActivity : AppCompatActivity() {
          * dan halaman bisa mengambil sampul dari situs. Alamat ini tidak pernah diminta ke server.
          */
         private const val HISTORY_URL = "https://m.fanfox.net/__riwayat-baca__"
+
+        /** Halaman Cari (Jelajah + Ranking) dari assets/search.html, dengan cara yang sama. */
+        private const val SEARCH_URL = "https://m.fanfox.net/__cari__"
+
+        /** Domain yang boleh diambil lewat jembatan MFNet. */
+        private val NET_HOSTS = setOf("fanfox.net", "m.fanfox.net", "newm.fanfox.net")
+
+        private const val DESKTOP_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
     }
 
     private lateinit var webView: WebView
@@ -65,9 +74,10 @@ class MainActivity : AppCompatActivity() {
         val u = url ?: ""
         val path = Uri.parse(u).path ?: ""
         val isHistory = u.startsWith(HISTORY_URL)
-        onReaderPage = !isHistory && (path.startsWith("/roll_manga/") || pagedChapter.containsMatchIn(path))
-        navSearch.isSelected = !isHistory && path.startsWith("/search")
-        navHome.isSelected = !isHistory && (path == "" || path == "/" || path.startsWith("/index"))
+        val isSearch = u.startsWith(SEARCH_URL)
+        onReaderPage = !isHistory && !isSearch && (path.startsWith("/roll_manga/") || pagedChapter.containsMatchIn(path))
+        navSearch.isSelected = isSearch || (!isHistory && path.startsWith("/search"))
+        navHome.isSelected = !isHistory && !isSearch && (path == "" || path == "/" || path.startsWith("/index"))
         navHistory.isSelected = isHistory
         navBookmark.isSelected = !isHistory && path.startsWith("/bookmark")
         val show = !onReaderPage && !imeVisible
@@ -75,6 +85,36 @@ class MainActivity : AppCompatActivity() {
         if (bottomNav.visibility != vis) {
             bottomNav.visibility = vis
             bottomNavLine.visibility = vis
+        }
+    }
+
+    private fun openSearch() {
+        val html = assets.open("search.html").bufferedReader().use { it.readText() }
+        webView.loadDataWithBaseURL(SEARCH_URL, html, "text/html", "utf-8", SEARCH_URL)
+    }
+
+    private val netPool = java.util.concurrent.Executors.newFixedThreadPool(4)
+
+    /**
+     * Mengambil halaman fanfox.net / newm.fanfox.net di belakang layar untuk fitur Cari,
+     * Ranking, rating, dan "chapter baru". Hasil dikirim balik ke window.__mfNet(id, ok, teks).
+     */
+    private inner class NetBridge {
+        @JavascriptInterface
+        fun fetch(url: String, id: String) {
+            val host = try { Uri.parse(url).host?.lowercase() } catch (e: Exception) { null }
+            if (host == null || host !in NET_HOSTS || !url.startsWith("https://")) {
+                deliver(id, null); return
+            }
+            // Versi desktop dipakai untuk direktori & pencarian lanjutan (tidak dialihkan ke m.)
+            val ua = if (host == "fanfox.net") DESKTOP_UA else userAgent
+            netPool.execute { deliver(id, DohClient.getText(url, ua)) }
+        }
+
+        private fun deliver(id: String, text: String?) {
+            val js = "window.__mfNet&&window.__mfNet(" + org.json.JSONObject.quote(id) + "," +
+                (text != null) + "," + org.json.JSONObject.quote(text ?: "") + ")"
+            runOnUiThread { if (!isDestroyed) webView.evaluateJavascript(js, null) }
         }
     }
 
@@ -176,6 +216,7 @@ class MainActivity : AppCompatActivity() {
         webView.setDownloadListener { _, _, _, _, _ -> /* abaikan unduhan (biasanya iklan) */ }
         // Riwayat baca: disimpan di aplikasi, diakses dari history.js dan history.html
         webView.addJavascriptInterface(HistoryBridge(), "MFHistory")
+        webView.addJavascriptInterface(NetBridge(), "MFNet")
         historyJs = assets.open("history.js").bufferedReader().use { it.readText() }
         bottomNav = findViewById(R.id.bottomNav)
         bottomNavLine = findViewById(R.id.bottomNavLine)
@@ -183,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         navHome = findViewById(R.id.navHome)
         navHistory = findViewById(R.id.navHistory)
         navBookmark = findViewById(R.id.navBookmark)
-        navSearch.setOnClickListener { webView.loadUrl("https://m.fanfox.net/search") }
+        navSearch.setOnClickListener { if (webView.url?.startsWith(SEARCH_URL) != true) openSearch() }
         navHome.setOnClickListener { webView.loadUrl(getString(R.string.start_url)) }
         navHistory.setOnClickListener { if (webView.url?.startsWith(HISTORY_URL) != true) openHistory() }
         navBookmark.setOnClickListener { webView.loadUrl("https://m.fanfox.net/bookmark") }
@@ -196,6 +237,9 @@ class MainActivity : AppCompatActivity() {
             if (webView.url?.startsWith(HISTORY_URL) == true) {
                 swipe.isRefreshing = false
                 openHistory()
+            } else if (webView.url?.startsWith(SEARCH_URL) == true) {
+                swipe.isRefreshing = false
+                openSearch()
             } else {
                 webView.reload()
             }

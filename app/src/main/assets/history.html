@@ -34,6 +34,8 @@
   .btn.primary { background:var(--green); color:#fff; }
   .btn.ghost { background:#eef3e6; color:var(--green-dark); }
   .del { flex:none; background:none; border:0; color:#a3aa9c; font-size:20px; line-height:1; padding:0 4px; align-self:flex-start; }
+  .new { align-self:flex-start; display:inline-block; margin:4px 0 0; padding:2px 8px; border-radius:6px; background:#ffe9c7; color:#9a5b00;
+         font-size:12px; font-weight:700; }
   .pos { margin-top:3px; font-size:14px; color:var(--text); }
   .pos b { font-weight:700; }
   .pos .done { color:var(--green-dark); font-weight:600; }
@@ -140,6 +142,7 @@
       var t = el('a', 'title', title);
       t.href = 'https://m.fanfox.net/manga/' + slug + '/';
       info.appendChild(t);
+      if (m.newCh > 0) info.appendChild(el('span', 'new', '\u25cf ' + m.newCh + ' chapter baru'));
       var pos = el('div', 'pos');
       pos.appendChild(el('b', null, chapterName(m.lastLabel, m.last)));
       var pt = pageText(e);
@@ -155,6 +158,11 @@
       var actions = el('div', 'actions');
       var go = el('a', 'btn primary', e.done ? 'Baca lagi' : 'Lanjut baca');
       go.href = m.lastUrl;
+      // Chapter terakhir sudah selesai dan ada chapter baru: langsung ke chapter berikutnya
+      if (e.done && m.newCh > 0 && m.nextUrl) {
+        go.textContent = 'Baca Ch ' + m.nextNum;
+        go.href = m.nextUrl;
+      }
       var detail = el('a', 'btn ghost', 'Daftar chapter');
       detail.href = 'https://m.fanfox.net/manga/' + slug + '/';
       actions.appendChild(go); actions.appendChild(detail);
@@ -222,6 +230,7 @@
   // Halaman ini dibuka atas nama m.fanfox.net, jadi bisa mengambil halaman detail manga
   // langsung dari situs untuk mendapatkan link sampul (yang punya masa berlaku).
   var COVER_TTL = 20 * 3600 * 1000;
+  var CHECK_TTL = 30 * 60 * 1000;   // cek chapter baru paling sering tiap 30 menit per manga
   var tried = {}, queue = [], running = 0;
   function absUrl(u) {
     if (!u) return '';
@@ -234,7 +243,9 @@
     if (tried[slug]) return;
     var m = load()[slug];
     if (!m) return;
-    if (!force && m.c && m.cAt && Date.now() - m.cAt < COVER_TTL) return;
+    var coverFresh = m.c && m.cAt && Date.now() - m.cAt < COVER_TTL;
+    var checkFresh = m.chkAt && Date.now() - m.chkAt < CHECK_TTL;
+    if (!force && coverFresh && checkFresh) return;
     tried[slug] = true;
     queue.push(slug);
     pump();
@@ -251,12 +262,25 @@
             var doc = new DOMParser().parseFromString(html, 'text/html');
             var img = doc.querySelector('img.detail-cover');
             var t = doc.querySelector('.manga-detail-top .title');
-            if (!img) return;
             var h = load();
             if (!h[slug]) return;
-            h[slug].c = absUrl(img.getAttribute('src'));
-            h[slug].cAt = Date.now();
+            if (img) { h[slug].c = absUrl(img.getAttribute('src')); h[slug].cAt = Date.now(); }
             if (t && t.textContent.trim()) h[slug].t = t.textContent.trim();
+            // Chapter baru = chapter di situs yang nomornya di atas chapter tertinggi yang pernah dibaca
+            var read = Object.keys(h[slug].ch || {}).map(parseFloat).filter(function (x) { return !isNaN(x); });
+            var maxRead = read.length ? Math.max.apply(null, read) : 0;
+            var newer = {};
+            [].forEach.call(doc.querySelectorAll('.chlist a[href]'), function (a) {
+              var mm = /\/c([\d.]+)\//.exec(a.getAttribute('href') || '');
+              if (!mm) return;
+              var n = parseFloat(mm[1]);
+              if (n > maxRead && !newer[n]) newer[n] = absUrl(a.getAttribute('href'));
+            });
+            var nums = Object.keys(newer).map(parseFloat).sort(function (a, b) { return a - b; });
+            h[slug].newCh = nums.length;
+            h[slug].nextNum = nums.length ? String(nums[0]) : '';
+            h[slug].nextUrl = nums.length ? newer[nums[0]] : '';
+            h[slug].chkAt = Date.now();
             save(h);
             render();
           };
