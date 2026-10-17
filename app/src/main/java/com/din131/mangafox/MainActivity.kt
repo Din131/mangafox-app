@@ -8,6 +8,7 @@ import android.os.Message
 import android.view.View
 import android.view.WindowManager
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -30,6 +31,11 @@ import java.io.ByteArrayInputStream
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        /** Halaman Riwayat Baca (dari folder assets aplikasi). */
+        private const val HISTORY_URL = "file:///android_asset/history.html"
+    }
+
     private lateinit var webView: WebView
     private lateinit var swipe: SwipeRefreshLayout
     private lateinit var progress: ProgressBar
@@ -38,6 +44,22 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var keepSplash = true
     /** Dibaca dari thread jaringan WebView, jadi disimpan sekali di sini. */
     @Volatile private var userAgent = ""
+
+    private lateinit var historyButton: View
+    private var historyJs = ""
+
+    private val historyPrefs by lazy { getSharedPreferences("history", MODE_PRIVATE) }
+
+    /** Penyimpanan riwayat baca (JSON). Dipanggil dari JavaScript di thread terpisah. */
+    private inner class HistoryBridge {
+        @JavascriptInterface
+        fun get(): String = historyPrefs.getString("data", "{}") ?: "{}"
+
+        @JavascriptInterface
+        fun set(json: String) {
+            historyPrefs.edit().putString("data", json).apply()
+        }
+    }
 
     private var popupView: WebView? = null
 
@@ -111,6 +133,17 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = Client()
         webView.webChromeClient = Chrome()
         webView.setDownloadListener { _, _, _, _, _ -> /* abaikan unduhan (biasanya iklan) */ }
+        // Riwayat baca: disimpan di aplikasi, diakses dari history.js dan history.html
+        webView.addJavascriptInterface(HistoryBridge(), "MFHistory")
+        historyJs = assets.open("history.js").bufferedReader().use { it.readText() }
+        historyButton = findViewById(R.id.historyButton)
+        historyButton.setOnClickListener {
+            if (webView.url?.startsWith(HISTORY_URL) == true) {
+                if (webView.canGoBack()) webView.goBack() else webView.loadUrl(getString(R.string.start_url))
+            } else {
+                webView.loadUrl(HISTORY_URL)
+            }
+        }
 
         // Tarik untuk refresh hanya saat halaman berada di paling atas
         swipe.setColorSchemeColors(getColor(R.color.accent))
@@ -465,6 +498,8 @@ class MainActivity : AppCompatActivity() {
             initialLoad = false
             swipe.isRefreshing = false
             view.evaluateJavascript(pageJs, null)
+            // Catat riwayat baca (hanya di halaman MangaFox)
+            if (url != null && isAllowed(Uri.parse(url).host)) view.evaluateJavascript(historyJs, null)
         }
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {

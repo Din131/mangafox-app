@@ -28,6 +28,21 @@
         android:progressTint="@color/accent"
         android:visibility="gone" />
 
+    <!-- Tombol Riwayat Baca -->
+    <ImageButton
+        android:id="@+id/historyButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="56dp"
+        android:background="@drawable/fab_bg"
+        android:contentDescription="@string/history"
+        android:elevation="6dp"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_history" />
+
     <TextView
         android:id="@+id/errorView"
         android:layout_width="match_parent"

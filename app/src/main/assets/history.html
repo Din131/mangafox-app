@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Riwayat Baca</title>
+<style>
+  :root { --green:#75b520; --green-dark:#5a8f16; --bg:#f2f4ef; --card:#fff; --text:#1d2418; --muted:#6b7464; --line:#e3e7dd; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.4 system-ui, -apple-system, Roboto, sans-serif; }
+  header { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:8px; height:52px; padding:0 8px 0 4px;
+           background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+  header button { background:none; border:0; color:#fff; font:inherit; padding:10px 12px; border-radius:8px; }
+  header button:active { background:rgba(255,255,255,.18); }
+  header h1 { flex:1; margin:0; font-size:18px; font-weight:600; }
+  #clear { font-size:13px; opacity:.95; }
+  .search { padding:10px 12px 0; }
+  .search input { width:100%; border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 12px; font:inherit; color:var(--text); }
+  .search input:focus { outline:2px solid var(--green); border-color:transparent; }
+  main { padding:10px 12px 24px; }
+  .item { display:flex; gap:12px; background:var(--card); border-radius:12px; padding:10px; margin-bottom:10px;
+          box-shadow:0 1px 2px rgba(0,0,0,.06); align-items:stretch; }
+  .cover { flex:none; width:64px; height:90px; border-radius:8px; overflow:hidden; background:var(--line);
+           display:flex; align-items:center; justify-content:center; color:var(--green-dark); font-weight:700; font-size:22px; }
+  .cover img { width:100%; height:100%; object-fit:cover; display:block; }
+  .info { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .title { font-weight:600; font-size:15px; color:var(--text); text-decoration:none; display:-webkit-box;
+           -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .meta { color:var(--muted); font-size:13px; margin-top:2px; }
+  .bar { height:4px; background:var(--line); border-radius:2px; margin-top:6px; overflow:hidden; }
+  .bar span { display:block; height:100%; background:var(--green); }
+  .actions { display:flex; gap:8px; margin-top:auto; padding-top:8px; }
+  .btn { flex:1; text-align:center; text-decoration:none; font-size:13px; font-weight:600; padding:8px 10px; border-radius:8px; }
+  .btn.primary { background:var(--green); color:#fff; }
+  .btn.ghost { background:#eef3e6; color:var(--green-dark); }
+  .del { flex:none; background:none; border:0; color:#a3aa9c; font-size:20px; line-height:1; padding:0 4px; align-self:flex-start; }
+  .empty { text-align:center; color:var(--muted); padding:60px 24px; }
+  .empty b { display:block; color:var(--text); font-size:16px; margin-bottom:6px; }
+</style>
+</head>
+<body>
+<header>
+  <button id="back" aria-label="Kembali">&#8592;</button>
+  <h1>Riwayat Baca</h1>
+  <button id="clear">Hapus semua</button>
+</header>
+<div class="search"><input id="q" type="search" placeholder="Cari di riwayat…" autocomplete="off"></div>
+<main id="list"></main>
+
+<script>
+(function () {
+  var listEl = document.getElementById('list');
+  var qEl = document.getElementById('q');
+
+  function load() {
+    try { return JSON.parse((window.MFHistory && window.MFHistory.get()) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function save(h) { try { window.MFHistory.set(JSON.stringify(h)); } catch (e) {} }
+
+  function ago(ts) {
+    var s = Math.max(0, (Date.now() - ts) / 1000);
+    if (s < 60) return 'baru saja';
+    if (s < 3600) return Math.floor(s / 60) + ' menit lalu';
+    if (s < 86400) return Math.floor(s / 3600) + ' jam lalu';
+    if (s < 86400 * 30) return Math.floor(s / 86400) + ' hari lalu';
+    return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function prettySlug(s) {
+    return s.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
+  function render() {
+    var h = load();
+    var q = qEl.value.trim().toLowerCase();
+    var keys = Object.keys(h).filter(function (k) { return k !== '__meta' && h[k] && h[k].last; });
+    keys.sort(function (a, b) { return (h[b].at || 0) - (h[a].at || 0); });
+    listEl.innerHTML = '';
+    document.getElementById('clear').style.visibility = keys.length ? 'visible' : 'hidden';
+
+    var shown = 0;
+    keys.forEach(function (slug) {
+      var m = h[slug];
+      var title = m.t || prettySlug(slug);
+      if (q && title.toLowerCase().indexOf(q) < 0) return;
+      shown++;
+      var e = (m.ch && m.ch[m.last]) || {};
+      var readCount = m.ch ? Object.keys(m.ch).length : 0;
+
+      var item = el('div', 'item');
+      var cover = el('div', 'cover');
+      if (m.c) {
+        var img = el('img');
+        img.loading = 'lazy';
+        img.src = m.c;
+        img.onerror = function () { cover.textContent = title.charAt(0).toUpperCase(); };
+        cover.appendChild(img);
+      } else {
+        cover.textContent = title.charAt(0).toUpperCase();
+      }
+
+      var info = el('div', 'info');
+      var t = el('a', 'title', title);
+      t.href = 'https://m.fanfox.net/manga/' + slug + '/';
+      info.appendChild(t);
+      var status = e.done ? 'selesai' : (e.n ? 'hal. ' + ((e.p || 0) + 1) + ' / ' + e.n : '');
+      info.appendChild(el('div', 'meta', (m.lastLabel || ('Ch ' + m.last)) + (status ? ' • ' + status : '')));
+      info.appendChild(el('div', 'meta', ago(m.at || 0) + ' • ' + readCount + ' chapter dibaca'));
+      if (e.n && !e.done) {
+        var bar = el('div', 'bar'), fill = el('span');
+        fill.style.width = Math.round(((e.p || 0) + 1) / e.n * 100) + '%';
+        bar.appendChild(fill); info.appendChild(bar);
+      }
+      var actions = el('div', 'actions');
+      var go = el('a', 'btn primary', e.done ? 'Baca lagi' : 'Lanjut baca');
+      go.href = m.lastUrl;
+      var detail = el('a', 'btn ghost', 'Daftar chapter');
+      detail.href = 'https://m.fanfox.net/manga/' + slug + '/';
+      actions.appendChild(go); actions.appendChild(detail);
+      info.appendChild(actions);
+
+      var del = el('button', 'del', '×');
+      del.setAttribute('aria-label', 'Hapus dari riwayat');
+      del.onclick = function () {
+        if (!confirm('Hapus "' + title + '" dari riwayat?')) return;
+        var hh = load(); delete hh[slug]; save(hh); render();
+      };
+
+      item.appendChild(cover); item.appendChild(info); item.appendChild(del);
+      listEl.appendChild(item);
+    });
+
+    if (!shown) {
+      var empty = el('div', 'empty');
+      empty.appendChild(el('b', null, q ? 'Tidak ditemukan' : 'Belum ada riwayat'));
+      empty.appendChild(document.createTextNode(q ? 'Coba kata kunci lain.' :
+        'Manga yang kamu baca akan muncul di sini, lengkap dengan chapter dan halaman terakhirnya.'));
+      listEl.appendChild(empty);
+    }
+  }
+
+  document.getElementById('back').onclick = function () { history.length > 1 ? history.back() : (location.href = 'https://m.fanfox.net/'); };
+  document.getElementById('clear').onclick = function () {
+    if (!confirm('Hapus semua riwayat baca?')) return;
+    var h = load(), meta = h.__meta; save(meta ? { __meta: meta } : {}); render();
+  };
+  qEl.addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>
